@@ -69,6 +69,7 @@ func ParseSliceOptions(tag reflect.StructTag) *SliceOptions {
 type DecoderField struct {
 	Name            string // key in the input
 	Required        bool
+	DiscardInvalid  bool
 	Options         interface{}
 	needsAllocation bool // true if we need to reflect.New
 	Default         string
@@ -187,6 +188,7 @@ func NewDecoder(destStruct interface{}) *Decoder {
 				if def := fieldStruct.Tag.Get("meta_default"); def != "" {
 					dfield.Default = def
 				}
+				dfield.DiscardInvalid = fieldStruct.Tag.Get("meta_discard_invalid") == "true"
 			} else if indirectedKind == reflect.Struct {
 				dfield.fieldCategory = categoryStruct
 				dfield.StructDecoder = NewDecoder(fieldInterface)
@@ -286,7 +288,7 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 					valuerValue = fieldValue
 				}
 				err = valuerValue.Interface().(Valuer).JSONValue(val, dfield.Options)
-				if err != nil {
+				if err != nil && !dfield.DiscardInvalid {
 					errs = addError(errs, metaName, err)
 				}
 			} else if dfield.Required {
