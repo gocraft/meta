@@ -291,3 +291,17 @@ func (i Uint64) Value() (driver.Value, error) {
 	}
 	return nil, nil
 }
+
+func (i Int64) MarshalJSON() ([]byte, error) {
+	if i.Present {
+		return json.Marshal(i.Val)
+	}
+	return nullString, nil
+}
+
+func (i Uint64) MarshalJSON() ([]byte, error) {
+	if i.Present {
+		return json.Marshal(i.Val)
+	}
+	return nullString, nil
+}
