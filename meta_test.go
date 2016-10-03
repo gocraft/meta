@@ -120,4 +120,22 @@ func TestValuers(t *testing.T) {
 	assertEqual(t, int64(1), v)
 }
 
+type withMetaStar struct {
+	AField    String
+	AllFields map[string]interface{} `meta:"*"`
+}
+
+var withMetaStarDecoder = NewDecoder(withMetaStar{})
+
+func TestMetaStar(t *testing.T) {
+	var inputs withMetaStar
+	e := withMetaStarDecoder.Decode(&inputs, url.Values{"cf_other_field": {"Another field"}}, []byte(`{"a_field": "A field", "cf_numeric_field": 12}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.AField.Val, "A field")
+	assertEqual(t, len(inputs.AllFields), 3)
+	assertEqual(t, inputs.AllFields["cf_numeric_field"], 12.0)
+	assertEqual(t, "Another field", inputs.AllFields["cf_other_field"])
+	assertEqual(t, "A field", inputs.AllFields["a_field"])
+}
+
 // TODO: test default values

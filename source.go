@@ -15,6 +15,7 @@ type source interface {
 	// If the value is not present, the pointer will be nil.
 	Value(interface{}) Errorable
 	Empty() bool
+	ValueMap() map[string]interface{}
 	// Malformed source must return ErrMalformed when Value is called.
 	// It should be set by the parent source.
 	// If the parent is malformed, its children must be malformed.
@@ -67,6 +68,17 @@ func (s mergedSource) Value(i interface{}) Errorable {
 		return m.Value(i)
 	}
 	return ErrBlank
+}
+
+func (s mergedSource) ValueMap() map[string]interface{} {
+	out := make(map[string]interface{})
+	for _, m := range s {
+		values := m.ValueMap()
+		for k, v := range values {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 func newJSONSource(b []byte) source {
@@ -138,6 +150,14 @@ func (jv *jsonSource) Value(i interface{}) Errorable {
 	return nil
 }
 
+func (jv *jsonSource) ValueMap() map[string]interface{} {
+	var out map[string]interface{}
+	if err := json.Unmarshal(jv.RawMessage, &out); err != nil {
+		return nil
+	}
+	return out
+}
+
 func newFormValueSource(values url.Values) source {
 	return &formValueSource{Values: values}
 }
@@ -181,4 +201,16 @@ func (fv *formValueSource) Value(i interface{}) Errorable {
 		return ErrBlank
 	}
 	return nil
+}
+
+func (fv *formValueSource) ValueMap() map[string]interface{} {
+	out := make(map[string]interface{})
+	for k, v := range fv.Values {
+		if len(v) == 1 {
+			out[k] = v[0]
+		} else {
+			out[k] = v
+		}
+	}
+	return out
 }

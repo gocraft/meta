@@ -29,6 +29,7 @@ const (
 	categoryStruct
 	categorySliceOfValues
 	categorySliceOfStructs
+	categoryAllFieldsMap
 )
 
 var nullString = []byte("null")
@@ -182,7 +183,9 @@ func NewDecoder(destStruct interface{}) *Decoder {
 			dfield.Doc = fieldStruct.Tag.Get("doc")
 
 			// Determine what kind of field it is.
-			if valuer, ok := fieldInterface.(Valuer); ok {
+			if metaName == "*" && indirectedKind == reflect.Map {
+				dfield.fieldCategory = categoryAllFieldsMap
+			} else if valuer, ok := fieldInterface.(Valuer); ok {
 				dfield.fieldCategory = categoryValuer
 				dfield.Options = valuer.ParseOptions(fieldStruct.Tag)
 				if def := fieldStruct.Tag.Get("meta_default"); def != "" {
@@ -396,6 +399,8 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 					errs = addError(errs, metaName, errorsInSlice)
 				}
 			}
+		case categoryAllFieldsMap:
+			fieldValue.Set(reflect.ValueOf(src.ValueMap()))
 		}
 	}
 
