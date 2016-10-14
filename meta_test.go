@@ -125,7 +125,12 @@ type withMetaStar struct {
 	AllFields map[string]interface{} `meta:"*"`
 }
 
+type nestedMetaStar struct {
+	Nested *withMetaStar
+}
+
 var withMetaStarDecoder = NewDecoder(withMetaStar{})
+var nestedMetaStarDecoder = NewDecoder(nestedMetaStar{})
 
 func TestMetaStar(t *testing.T) {
 	var inputs withMetaStar
@@ -134,8 +139,19 @@ func TestMetaStar(t *testing.T) {
 	assertEqual(t, inputs.AField.Val, "A field")
 	assertEqual(t, len(inputs.AllFields), 3)
 	assertEqual(t, inputs.AllFields["cf_numeric_field"], 12.0)
-	assertEqual(t, "Another field", inputs.AllFields["cf_other_field"])
-	assertEqual(t, "A field", inputs.AllFields["a_field"])
+	assertEqual(t, inputs.AllFields["cf_other_field"], "Another field")
+	assertEqual(t, inputs.AllFields["a_field"], "A field")
+}
+
+func TestNestedMetaStar(t *testing.T) {
+	var inputs nestedMetaStar
+	e := nestedMetaStarDecoder.Decode(&inputs, url.Values{"nested.cf_other_field": {"Another field"}}, []byte(`{"nested":{"a_field": "A field", "cf_numeric_field": 12}}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.Nested.AField.Val, "A field")
+	assertEqual(t, len(inputs.Nested.AllFields), 3)
+	assertEqual(t, inputs.Nested.AllFields["cf_numeric_field"], 12.0)
+	assertEqual(t, inputs.Nested.AllFields["cf_other_field"], "Another field")
+	assertEqual(t, inputs.Nested.AllFields["a_field"], "A field")
 }
 
 // TODO: test default values

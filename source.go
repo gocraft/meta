@@ -206,10 +206,14 @@ func (fv *formValueSource) Value(i interface{}) Errorable {
 func (fv *formValueSource) ValueMap() map[string]interface{} {
 	out := make(map[string]interface{})
 	for k, v := range fv.Values {
+		if fv.prefix != "" && !strings.HasPrefix(k, fv.prefix+".") {
+			continue
+		}
+		key := strings.TrimPrefix(k, fv.prefix+".")
 		if len(v) == 1 {
-			out[k] = v[0]
+			out[key] = v[0]
 		} else {
-			out[k] = v
+			out[key] = v
 		}
 	}
 	return out
