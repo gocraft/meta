@@ -414,3 +414,118 @@ func TestStringPointerRequired(t *testing.T) { // Missing -> required
 	assertEqual(t, inputs.A, (*String)(nil))
 	assertEqual(t, inputs.B, (*String)(nil))
 }
+
+type withOptionalNullString struct {
+	A String `meta_null:"true"`
+}
+
+var withOptionalNullStringDecoder = NewDecoder(&withOptionalNullString{})
+
+func TestOptionalNullStringSuccess(t *testing.T) {
+	var inputs withOptionalNullString
+	e := withOptionalNullStringDecoder.DecodeValues(&inputs, url.Values{"a": {"wat"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "wat")
+
+	inputs = withOptionalNullString{}
+	e = withOptionalNullStringDecoder.DecodeJSON(&inputs, []byte(`{"a":"wat"}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "wat")
+}
+
+func TestOptionalNullStringNull(t *testing.T) {
+	var inputs withOptionalNullString
+	e := withOptionalNullStringDecoder.DecodeValues(&inputs, url.Values{"a": {""}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, "")
+
+	inputs = withOptionalNullString{}
+	e = withOptionalNullStringDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, "")
+}
+
+func TestOptionalNullStringOmitted(t *testing.T) {
+	var inputs withOptionalNullString
+	e := withOptionalNullStringDecoder.DecodeValues(&inputs, url.Values{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+
+	inputs = withOptionalNullString{}
+	e = withOptionalNullStringDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+}
+
+type withOptionalNullBlankString struct {
+	A String `meta_null:"true" meta_blank:"true"`
+}
+
+var withOptionalNullBlankStringDecoder = NewDecoder(&withOptionalNullBlankString{})
+
+func TestOptionalNullBlankStringSuccess(t *testing.T) {
+	var inputs withOptionalNullBlankString
+	e := withOptionalNullBlankStringDecoder.DecodeValues(&inputs, url.Values{"a": {"wat"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "wat")
+
+	inputs = withOptionalNullBlankString{}
+	e = withOptionalNullBlankStringDecoder.DecodeJSON(&inputs, []byte(`{"a":"wat"}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "wat")
+}
+
+func TestOptionalNullBlankStringNull(t *testing.T) {
+	var inputs withOptionalNullBlankString
+	e := withOptionalNullBlankStringDecoder.DecodeValues(&inputs, url.Values{"a": {""}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+
+	inputs = withOptionalNullBlankString{}
+	e = withOptionalNullBlankStringDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, "")
+
+	inputs = withOptionalNullBlankString{}
+	e = withOptionalNullBlankStringDecoder.DecodeJSON(&inputs, []byte(`{"a":""}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+}
+
+func TestOptionalNullBlankStringOmitted(t *testing.T) {
+	var inputs withOptionalNullBlankString
+	e := withOptionalNullBlankStringDecoder.DecodeValues(&inputs, url.Values{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+
+	inputs = withOptionalNullBlankString{}
+	e = withOptionalNullBlankStringDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, "")
+}

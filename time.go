@@ -2,6 +2,7 @@ package meta
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"reflect"
 	"time"
 )
@@ -13,27 +14,34 @@ import (
 type Time struct {
 	Val time.Time
 	Presence
+	Nullity
 }
 
 type TimeOptions struct {
 	Required     bool
 	DiscardBlank bool
+	Null         bool
 	Format       string
 }
 
 func NewTime(t time.Time) Time {
-	return Time{t, Presence{true}}
+	return Time{t, Presence{true}, Nullity{false}}
 }
 
 func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
 	opts := &TimeOptions{
 		Required:     false,
 		DiscardBlank: true,
+		Null:         false,
 		Format:       time.RFC3339,
 	}
 
 	if tag.Get("meta_required") == "true" {
 		opts.Required = true
+	}
+
+	if tag.Get("meta_null") == "true" {
+		opts.Null = true
 	}
 
 	if tag.Get("meta_discard_blank") == "false" {
@@ -64,6 +72,11 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 	opts := options.(*TimeOptions)
 
 	if value == "" {
+		if opts.Null {
+			t.Present = true
+			t.Null = true
+			return nil
+		}
 		if opts.Required {
 			return ErrBlank
 		}
@@ -84,8 +97,15 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 }
 
 func (t Time) Value() (driver.Value, error) {
-	if t.Present {
+	if t.Present && !t.Null {
 		return t.Val, nil
 	}
 	return nil, nil
+}
+
+func (t Time) MarshalJSON() ([]byte, error) {
+	if t.Present && !t.Null {
+		return json.Marshal(t.Val)
+	}
+	return nullString, nil
 }
