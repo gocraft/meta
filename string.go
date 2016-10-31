@@ -17,6 +17,7 @@ import (
 type String struct {
 	Val string
 	Presence
+	Nullity
 }
 
 type StringOptions struct {
@@ -24,6 +25,7 @@ type StringOptions struct {
 	DiscardBlank    bool
 	Strip           bool
 	Blank           bool
+	Null            bool
 	MinRunesPresent bool
 	MinRunes        int
 	MaxRunesPresent bool
@@ -32,7 +34,7 @@ type StringOptions struct {
 }
 
 func NewString(s string) String {
-	return String{s, Presence{Present: true}}
+	return String{s, Presence{true}, Nullity{false}}
 }
 
 func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
@@ -41,6 +43,7 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 		DiscardBlank:    true,
 		Strip:           true,
 		Blank:           false,
+		Null:            false,
 		MinRunesPresent: false,
 		MinRunes:        0,
 		MaxRunesPresent: false,
@@ -62,6 +65,10 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 
 	if tag.Get("meta_blank") == "true" {
 		opts.Blank = true
+	}
+
+	if tag.Get("meta_null") == "true" {
+		opts.Null = true
 	}
 
 	if minRunesString := tag.Get("meta_min_runes"); minRunesString != "" {
@@ -95,6 +102,12 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 
 func (s *String) JSONValue(i interface{}, options interface{}) Errorable {
 	if i == nil {
+		opts := options.(*StringOptions)
+		if opts.Null {
+			s.Present = true
+			s.Null = true
+			return nil
+		}
 		return s.FormValue("", options)
 	}
 
@@ -126,6 +139,11 @@ func (s *String) FormValue(value string, options interface{}) Errorable {
 	if runeCount == 0 {
 		if opts.Blank {
 			s.Present = true
+			return nil
+		}
+		if opts.Null {
+			s.Present = true
+			s.Null = true
 			return nil
 		}
 		if opts.Required {
@@ -173,14 +191,14 @@ func (s *String) FormValue(value string, options interface{}) Errorable {
 }
 
 func (s String) Value() (driver.Value, error) {
-	if s.Present {
+	if s.Present && !s.Null {
 		return s.Val, nil
 	}
 	return nil, nil
 }
 
 func (s String) MarshalJSON() ([]byte, error) {
-	if s.Present {
+	if s.Present && !s.Null {
 		return json.Marshal(s.Val)
 	}
 	return nullString, nil
