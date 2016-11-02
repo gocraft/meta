@@ -164,3 +164,57 @@ func TestOptionalBoolBlankFailure(t *testing.T) {
 	e = NewDecoder(&inputs).DecodeJSON(&inputs, []byte(`{"a":null}`))
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 }
+
+type withOptionalNullBool struct {
+	A Bool `meta_null:"true"`
+}
+
+var withOptionalNullBoolDecoder = NewDecoder(&withOptionalNullBool{})
+
+func TestOptionalNullBoolSuccess(t *testing.T) {
+	var inputs withOptionalNullBool
+	e := withOptionalNullBoolDecoder.DecodeValues(&inputs, url.Values{"a": {"true"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, true)
+
+	inputs = withOptionalNullBool{}
+	e = withOptionalNullBoolDecoder.DecodeJSON(&inputs, []byte(`{"a":"true"}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, true)
+}
+
+func TestOptionalNullBoolNull(t *testing.T) {
+	var inputs withOptionalNullBool
+	e := withOptionalNullBoolDecoder.DecodeValues(&inputs, url.Values{"a": {""}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, false)
+
+	inputs = withOptionalNullBool{}
+	e = withOptionalNullBoolDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, false)
+}
+
+func TestOptionalNullBoolOmitted(t *testing.T) {
+	var inputs withOptionalNullBool
+	e := withOptionalNullBoolDecoder.DecodeValues(&inputs, url.Values{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, false)
+
+	inputs = withOptionalNullBool{}
+	e = withOptionalNullBoolDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, false)
+}

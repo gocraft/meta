@@ -13,22 +13,25 @@ import (
 
 type Bool struct {
 	Val bool
+	Nullity
 	Presence
 }
 
 type BoolOptions struct {
 	Required     bool
 	DiscardBlank bool
+	Null         bool
 }
 
 func NewBool(b bool) Bool {
-	return Bool{b, Presence{Present: true}}
+	return Bool{b, Nullity{false}, Presence{true}}
 }
 
 func (b *Bool) ParseOptions(tag reflect.StructTag) interface{} {
 	opts := &BoolOptions{
 		Required:     false,
 		DiscardBlank: true,
+		Null:         false,
 	}
 
 	if tag.Get("meta_required") == "true" {
@@ -39,6 +42,10 @@ func (b *Bool) ParseOptions(tag reflect.StructTag) interface{} {
 		opts.DiscardBlank = false
 	}
 
+	if tag.Get("meta_null") == "true" {
+		opts.Null = true
+	}
+
 	return opts
 }
 
@@ -46,6 +53,11 @@ func (b *Bool) FormValue(value string, options interface{}) Errorable {
 	opts := options.(*BoolOptions)
 
 	if value == "" {
+		if opts.Null {
+			b.Present = true
+			b.Null = true
+			return nil
+		}
 		if opts.Required {
 			return ErrBlank
 		}
@@ -69,11 +81,15 @@ func (b *Bool) JSONValue(i interface{}, options interface{}) Errorable {
 	opts := options.(*BoolOptions)
 
 	if i == nil {
-		if opts.Required || !opts.DiscardBlank {
-			return ErrBlank
-		} else {
+		if opts.Null {
+			b.Present = true
+			b.Null = true
 			return nil
 		}
+		if opts.Required || !opts.DiscardBlank {
+			return ErrBlank
+		}
+		return nil
 	}
 
 	switch value := i.(type) {
@@ -91,8 +107,15 @@ func (b *Bool) JSONValue(i interface{}, options interface{}) Errorable {
 }
 
 func (b Bool) Value() (driver.Value, error) {
-	if b.Present {
+	if b.Present && !b.Null {
 		return b.Val, nil
 	}
 	return nil, nil
+}
+
+func (b Bool) MarshalJSON() ([]byte, error) {
+	if b.Present && !b.Null {
+		return json.Marshal(b.Val)
+	}
+	return nullString, nil
 }
