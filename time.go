@@ -13,8 +13,8 @@ import (
 
 type Time struct {
 	Val time.Time
-	Presence
 	Nullity
+	Presence
 }
 
 type TimeOptions struct {
@@ -25,7 +25,7 @@ type TimeOptions struct {
 }
 
 func NewTime(t time.Time) Time {
-	return Time{t, Presence{true}, Nullity{false}}
+	return Time{t, Nullity{false}, Presence{true}}
 }
 
 func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {

@@ -16,8 +16,8 @@ import (
 
 type String struct {
 	Val string
-	Presence
 	Nullity
+	Presence
 }
 
 type StringOptions struct {
@@ -34,7 +34,7 @@ type StringOptions struct {
 }
 
 func NewString(s string) String {
-	return String{s, Presence{true}, Nullity{false}}
+	return String{s, Nullity{false}, Presence{true}}
 }
 
 func (s *String) ParseOptions(tag reflect.StructTag) interface{} {

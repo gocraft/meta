@@ -113,7 +113,7 @@ func TestValuers(t *testing.T) {
 	assert(t, err == nil)
 	assertEqual(t, int64(1), v)
 
-	ui64 := Uint64{1, Presence{true}}
+	ui64 := Uint64{1, Nullity{false}, Presence{true}}
 	valuer = ui64
 	v, err = valuer.Value()
 	assert(t, err == nil)

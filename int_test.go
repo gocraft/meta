@@ -440,3 +440,57 @@ func TestOptionalNullIntOmitted(t *testing.T) {
 	assertEqual(t, inputs.A.Null, false)
 	assertEqual(t, inputs.A.Val, int64(0))
 }
+
+type withOptionalNullUint struct {
+	A Uint64 `meta_null:"true"`
+}
+
+var withOptionalNullUintDecoder = NewDecoder(&withOptionalNullUint{})
+
+func TestOptionalNullUintSuccess(t *testing.T) {
+	var inputs withOptionalNullUint
+	e := withOptionalNullUintDecoder.DecodeValues(&inputs, url.Values{"a": {"5"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(5))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeJSON(&inputs, []byte(`{"a":5}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(5))
+}
+
+func TestOptionalNullUintNull(t *testing.T) {
+	var inputs withOptionalNullUint
+	e := withOptionalNullUintDecoder.DecodeValues(&inputs, url.Values{"a": {""}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, uint64(0))
+}
+
+func TestOptionalNullUintOmitted(t *testing.T) {
+	var inputs withOptionalNullUint
+	e := withOptionalNullUintDecoder.DecodeValues(&inputs, url.Values{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(0))
+}

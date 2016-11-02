@@ -20,6 +20,7 @@ type Int64 struct {
 
 type Uint64 struct {
 	Val uint64
+	Nullity
 	Presence
 }
 
@@ -36,6 +37,7 @@ type IntOptions struct {
 
 type UintOptions struct {
 	Required     bool
+	Null         bool
 	DiscardBlank bool
 	MinPresent   bool
 	Min          uint64
@@ -49,7 +51,7 @@ func NewInt64(val int64) Int64 {
 }
 
 func NewUint64(val uint64) Uint64 {
-	return Uint64{val, Presence{true}}
+	return Uint64{val, Nullity{false}, Presence{true}}
 }
 
 func (i *Int64) ParseOptions(tag reflect.StructTag) interface{} {
@@ -110,6 +112,10 @@ func (i *Uint64) ParseOptions(tag reflect.StructTag) interface{} {
 
 	if tag.Get("meta_required") == "true" {
 		opts.Required = true
+	}
+
+	if tag.Get("meta_null") == "true" {
+		opts.Null = true
 	}
 
 	if tag.Get("meta_discard_blank") == "false" {
@@ -235,6 +241,11 @@ func (i *Uint64) FormValue(value string, options interface{}) Errorable {
 	opts := options.(*UintOptions)
 
 	if value == "" {
+		if opts.Null {
+			i.Null = true
+			i.Present = true
+			return nil
+		}
 		if opts.Required {
 			return ErrBlank
 		}
@@ -286,21 +297,21 @@ func (i Int64) Value() (driver.Value, error) {
 
 // NOTE: I know I am casting uints to int64's. This is per Go's docs, which does NOT list uint64 as a viable type. Unsure what that means for a large Uint64.
 func (i Uint64) Value() (driver.Value, error) {
-	if i.Present {
+	if i.Present && !i.Null {
 		return int64(i.Val), nil
 	}
 	return nil, nil
 }
 
 func (i Int64) MarshalJSON() ([]byte, error) {
-	if i.Present {
+	if i.Present && !i.Null {
 		return json.Marshal(i.Val)
 	}
 	return nullString, nil
 }
 
 func (i Uint64) MarshalJSON() ([]byte, error) {
-	if i.Present {
+	if i.Present && !i.Null {
 		return json.Marshal(i.Val)
 	}
 	return nullString, nil
