@@ -75,7 +75,7 @@ type DecoderField struct {
 	needsAllocation bool // true if we need to reflect.New
 	Default         string
 	Doc             string
-	Pattern         string
+	DocPattern      string
 
 	*SliceOptions
 
@@ -182,7 +182,7 @@ func NewDecoder(destStruct interface{}) *Decoder {
 			}
 
 			dfield.Doc = fieldStruct.Tag.Get("doc")
-			dfield.Pattern = fieldStruct.Tag.Get("pattern")
+			dfield.DocPattern = fieldStruct.Tag.Get("doc_pattern")
 
 			// Determine what kind of field it is.
 			if metaName == "*" && indirectedKind == reflect.Map {
