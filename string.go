@@ -30,6 +30,8 @@ type StringOptions struct {
 	MinRunes        int
 	MaxRunesPresent bool
 	MaxRunes        int
+	MaxBytesPresent bool
+	MaxBytes        int
 	In              []string
 }
 
@@ -48,6 +50,8 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 		MinRunes:        0,
 		MaxRunesPresent: false,
 		MaxRunes:        0,
+		MaxBytesPresent: false,
+		MaxBytes:        0,
 	}
 
 	// need this here to implement discard_blank
@@ -89,6 +93,16 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 
 		opts.MaxRunesPresent = true
 		opts.MaxRunes = int(maxRunes)
+	}
+
+	if maxBytesString := tag.Get("meta_max_bytes"); maxBytesString != "" {
+		maxBytes, err := strconv.ParseInt(maxBytesString, 10, 0)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		opts.MaxBytesPresent = true
+		opts.MaxBytes = int(maxBytes)
 	}
 
 	if in := tag.Get("meta_in"); in != "" {
@@ -167,6 +181,12 @@ func (s *String) FormValue(value string, options interface{}) Errorable {
 	if opts.MaxRunesPresent {
 		if runeCount > opts.MaxRunes {
 			return ErrMaxRunes
+		}
+	}
+
+	if opts.MaxBytesPresent {
+		if len(value) > opts.MaxBytes {
+			return ErrMaxBytes
 		}
 	}
 

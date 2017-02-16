@@ -175,6 +175,43 @@ func TestStringMaxRunes(t *testing.T) {
 	assertEqual(t, e, ErrorHash{"a": ErrMaxRunes})
 }
 
+func TestStringMaxBytes(t *testing.T) {
+	var inputs struct {
+		A String `meta_required:"true" meta_max_bytes:"2"`
+	}
+	d := NewDecoder(&inputs)
+
+	e := d.DecodeValues(&inputs, url.Values{"a": {"ab"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, "ab")
+
+	e = d.DecodeJSON(&inputs, []byte(`{"a":"cd"}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, "cd")
+
+	e = d.DecodeValues(&inputs, url.Values{"a": {"a"}})
+	assertEqual(t, e, ErrorHash(nil))
+
+	e = d.DecodeJSON(&inputs, []byte(`{"a":"a"}`))
+	assertEqual(t, e, ErrorHash(nil))
+
+	e = d.DecodeValues(&inputs, url.Values{"a": {"abc"}})
+	assertEqual(t, e, ErrorHash{"a": ErrMaxBytes})
+
+	e = d.DecodeJSON(&inputs, []byte(`{"a":"ade"}`))
+	assertEqual(t, e, ErrorHash{"a": ErrMaxBytes})
+
+	e = d.DecodeValues(&inputs, url.Values{"a": {"世"}}) // 3-byte character. 1 rune.
+	assertEqual(t, e, ErrorHash{"a": ErrMaxBytes})
+
+	e = d.DecodeJSON(&inputs, []byte(`{"a":"世"}`))
+	assertEqual(t, e, ErrorHash{"a": ErrMaxBytes})
+
+	// This involves coersion and then string check
+	e = d.DecodeJSON(&inputs, []byte(`{"a":true}`))
+	assertEqual(t, e, ErrorHash{"a": ErrMaxBytes})
+}
+
 func TestStringIn(t *testing.T) {
 	var inputs struct {
 		A String `meta_required:"true" meta_in:"foo,bar,baz,true"`

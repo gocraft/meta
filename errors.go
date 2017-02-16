@@ -68,6 +68,7 @@ var (
 	ErrRequired   = ErrorAtom("required")
 	ErrMinRunes   = ErrorAtom("min_runes")
 	ErrMaxRunes   = ErrorAtom("max_runes")
+	ErrMaxBytes   = ErrorAtom("max_bytes")
 	ErrUtf8       = ErrorAtom("utf8")
 	ErrBool       = ErrorAtom("bool")
 	ErrTime       = ErrorAtom("time")
