@@ -194,14 +194,7 @@ func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Deco
 				dfield.fieldCategory = categoryAllFieldsMap
 			} else if valuer, ok := fieldInterface.(Valuer); ok {
 				dfield.fieldCategory = categoryValuer
-
-				parsedOptions := valuer.ParseOptions(fieldStruct.Tag)
-				if timeOptions, ok := parsedOptions.(*TimeOptions); ok && len(options.TimeFormats) > 0 {
-					timeOptions.Format = options.TimeFormats
-					parsedOptions = timeOptions
-				}
-
-				dfield.Options = parsedOptions
+				dfield.Options = getParsedOptions(valuer, fieldStruct, options)
 				if def := fieldStruct.Tag.Get("meta_default"); def != "" {
 					dfield.Default = def
 				}
@@ -234,13 +227,7 @@ func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Deco
 				if reflect.PtrTo(elemIndirectedType).Implements(reflectTypeValuer) {
 					dfield.fieldCategory = categorySliceOfValues
 					valuer := reflect.New(elemIndirectedType).Interface().(Valuer) // Make a new object so we can use it to parse values.
-
-					parsedOptions := valuer.ParseOptions(fieldStruct.Tag)
-					if timeOptions, ok := parsedOptions.(*TimeOptions); ok && len(options.TimeFormats) > 0 {
-						timeOptions.Format = options.TimeFormats
-						parsedOptions = timeOptions
-					}
-					dfield.Options = parsedOptions
+					dfield.Options = getParsedOptions(valuer, fieldStruct, options)
 				} else if elemIndirectedKind == reflect.Struct {
 					dfield.fieldCategory = categorySliceOfStructs
 					dfield.StructDecoder = NewDecoderWithOptions(reflect.New(elemIndirectedType).Interface(), options)
@@ -254,6 +241,16 @@ func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Deco
 	}
 
 	return decoder
+}
+
+func getParsedOptions(valuer Valuer, fieldStruct reflect.StructField, options DecoderOptions) interface{} {
+	parsedOptions := valuer.ParseOptions(fieldStruct.Tag)
+	if timeOptions, ok := parsedOptions.(*TimeOptions); ok && len(options.TimeFormats) > 0 {
+		timeOptions.Format = options.TimeFormats
+		parsedOptions = timeOptions
+	}
+
+	return parsedOptions
 }
 
 func NewDecoder(destStruct interface{}) *Decoder {

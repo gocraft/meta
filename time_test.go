@@ -66,6 +66,26 @@ func TestTimeCustomFormat(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 }
 
+func TestMultipleFormats(t *testing.T) {
+	var inputs struct {
+		A Time
+	}
+
+	e := NewDecoderWithOptions(&inputs, DecoderOptions{
+		TimeFormats: []string{time.RFC3339, "2006-01-02 15:04:05"},
+	}).DecodeValues(&inputs, url.Values{"a": {"2016-01-01 00:00:00"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assert(t, inputs.A.Val.Equal(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)))
+	assertEqual(t, inputs.A.Present, true)
+
+	e = NewDecoderWithOptions(&inputs, DecoderOptions{
+		TimeFormats: []string{time.RFC3339, "2006-01-02 15:04:05"},
+	}).DecodeValues(&inputs, url.Values{"a": {"2016-01-01T00:00:00Z"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assert(t, inputs.A.Val.Equal(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)))
+	assertEqual(t, inputs.A.Present, true)
+}
+
 type withOptionalTime struct {
 	A Time
 }
