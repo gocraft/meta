@@ -21,7 +21,7 @@ type TimeOptions struct {
 	Required     bool
 	DiscardBlank bool
 	Null         bool
-	Format       string
+	Format       []string
 }
 
 func NewTime(t time.Time) Time {
@@ -33,7 +33,7 @@ func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
 		Required:     false,
 		DiscardBlank: true,
 		Null:         false,
-		Format:       time.RFC3339,
+		Format:       []string{time.RFC3339},
 	}
 
 	if tag.Get("meta_required") == "true" {
@@ -49,7 +49,7 @@ func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
 	}
 
 	if tag.Get("meta_format") != "" {
-		opts.Format = tag.Get("meta_format")
+		opts.Format = []string{tag.Get("meta_format")}
 	}
 
 	return opts
@@ -87,10 +87,12 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 		return nil
 	}
 
-	if v, err := time.Parse(opts.Format, value); err == nil {
-		t.Val = v
-		t.Present = true
-		return nil
+	for _, format := range opts.Format {
+		if v, err := time.Parse(format, value); err == nil {
+			t.Val = v
+			t.Present = true
+			return nil
+		}
 	}
 
 	return ErrTime

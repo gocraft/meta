@@ -103,9 +103,14 @@ type DecoderField struct {
 type Decoder struct {
 	structType reflect.Type
 	Fields     []DecoderField
+	Options    DecoderOptions
 }
 
-func NewDecoder(destStruct interface{}) *Decoder {
+type DecoderOptions struct {
+	TimeFormats []string
+}
+
+func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Decoder {
 	destValue := reflect.ValueOf(destStruct)
 	indirectedDest := reflect.Indirect(destValue)
 	destType := indirectedDest.Type()
@@ -161,7 +166,7 @@ func NewDecoder(destStruct interface{}) *Decoder {
 
 		if fieldStruct.Anonymous && indirectedKind == reflect.Struct {
 			// It's an embedded struct:
-			embeddedDecoder := NewDecoder(fieldInterface)
+			embeddedDecoder := NewDecoderWithOptions(fieldInterface, options)
 
 			for _, embeddedDField := range embeddedDecoder.Fields {
 				idx := []int{i}
@@ -189,14 +194,21 @@ func NewDecoder(destStruct interface{}) *Decoder {
 				dfield.fieldCategory = categoryAllFieldsMap
 			} else if valuer, ok := fieldInterface.(Valuer); ok {
 				dfield.fieldCategory = categoryValuer
-				dfield.Options = valuer.ParseOptions(fieldStruct.Tag)
+
+				parsedOptions := valuer.ParseOptions(fieldStruct.Tag)
+				if timeOptions, ok := parsedOptions.(*TimeOptions); ok && len(options.TimeFormats) > 0 {
+					timeOptions.Format = options.TimeFormats
+					parsedOptions = timeOptions
+				}
+
+				dfield.Options = parsedOptions
 				if def := fieldStruct.Tag.Get("meta_default"); def != "" {
 					dfield.Default = def
 				}
 				dfield.DiscardInvalid = fieldStruct.Tag.Get("meta_discard_invalid") == "true"
 			} else if indirectedKind == reflect.Struct {
 				dfield.fieldCategory = categoryStruct
-				dfield.StructDecoder = NewDecoder(fieldInterface)
+				dfield.StructDecoder = NewDecoderWithOptions(fieldInterface, options)
 			} else if indirectedKind == reflect.Slice {
 				var elemType, elemIndirectedType reflect.Type
 				var elemKind, elemIndirectedKind reflect.Kind
@@ -222,10 +234,16 @@ func NewDecoder(destStruct interface{}) *Decoder {
 				if reflect.PtrTo(elemIndirectedType).Implements(reflectTypeValuer) {
 					dfield.fieldCategory = categorySliceOfValues
 					valuer := reflect.New(elemIndirectedType).Interface().(Valuer) // Make a new object so we can use it to parse values.
-					dfield.Options = valuer.ParseOptions(fieldStruct.Tag)
+
+					parsedOptions := valuer.ParseOptions(fieldStruct.Tag)
+					if timeOptions, ok := parsedOptions.(*TimeOptions); ok && len(options.TimeFormats) > 0 {
+						timeOptions.Format = options.TimeFormats
+						parsedOptions = timeOptions
+					}
+					dfield.Options = parsedOptions
 				} else if elemIndirectedKind == reflect.Struct {
 					dfield.fieldCategory = categorySliceOfStructs
-					dfield.StructDecoder = NewDecoder(reflect.New(elemIndirectedType).Interface())
+					dfield.StructDecoder = NewDecoderWithOptions(reflect.New(elemIndirectedType).Interface(), options)
 				} else {
 					panic("unknown type of slice")
 				}
@@ -236,6 +254,10 @@ func NewDecoder(destStruct interface{}) *Decoder {
 	}
 
 	return decoder
+}
+
+func NewDecoder(destStruct interface{}) *Decoder {
+	return NewDecoderWithOptions(destStruct, DecoderOptions{})
 }
 
 func (d *Decoder) Decode(dest interface{}, values url.Values, b []byte) ErrorHash {
