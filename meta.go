@@ -230,7 +230,11 @@ func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Deco
 					dfield.Options = getParsedOptions(valuer, fieldStruct, options)
 				} else if elemIndirectedKind == reflect.Struct {
 					dfield.fieldCategory = categorySliceOfStructs
-					dfield.StructDecoder = NewDecoderWithOptions(reflect.New(elemIndirectedType).Interface(), options)
+					if elemIndirectedType == destType {
+						dfield.StructDecoder = decoder
+					} else {
+						dfield.StructDecoder = NewDecoderWithOptions(reflect.New(elemIndirectedType).Interface(), options)
+					}
 				} else {
 					panic("unknown type of slice")
 				}
