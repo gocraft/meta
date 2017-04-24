@@ -154,4 +154,25 @@ func TestNestedMetaStar(t *testing.T) {
 	assertEqual(t, inputs.Nested.AllFields["a_field"], "A field")
 }
 
+type WithSelfReference struct {
+	Name     String
+	Children []*WithSelfReference
+}
+
+var withSelfReferenceDecoder = NewDecoder(WithSelfReference{})
+
+func TestWithSelfReference(t *testing.T) {
+	var inputs WithSelfReference
+	e := withSelfReferenceDecoder.Decode(&inputs, nil, []byte(`{"name": "parent", "children": [{"name": "child 1"}, {"name": "child 2", "children": [{"name": "grandchild"}]}]}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.Name.Val, "parent")
+	assertEqual(t, len(inputs.Children), 2)
+	assertEqual(t, inputs.Children[0].Name.Val, "child 1")
+	assertEqual(t, len(inputs.Children[0].Children), 0)
+	assertEqual(t, inputs.Children[1].Name.Val, "child 2")
+	assertEqual(t, len(inputs.Children[1].Children), 1)
+	assertEqual(t, inputs.Children[1].Children[0].Name.Val, "grandchild")
+	assertEqual(t, len(inputs.Children[1].Children[0].Children), 0)
+}
+
 // TODO: test default values
