@@ -223,3 +223,22 @@ func (s String) MarshalJSON() ([]byte, error) {
 	}
 	return nullString, nil
 }
+
+func (s *String) UnmarshalJSON(data []byte) error {
+	strVal := string(data)
+	if strVal == string(nullString) {
+		s.Present = false
+		s.Null = true
+	} else {
+		s.Present = true
+		s.Null = false
+		strVal, err := strconv.Unquote(strVal)
+		if err != nil {
+			return err
+		} else {
+			s.Val = strVal
+		}
+	}
+
+	return nil
+}
