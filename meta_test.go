@@ -138,7 +138,7 @@ func TestMetaStar(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.AField.Val, "A field")
 	assertEqual(t, len(inputs.AllFields), 3)
-	assertEqual(t, inputs.AllFields["cf_numeric_field"], 12.0)
+	assertEqual(t, inputs.AllFields["cf_numeric_field"], json.Number("12"))
 	assertEqual(t, inputs.AllFields["cf_other_field"], "Another field")
 	assertEqual(t, inputs.AllFields["a_field"], "A field")
 }
@@ -149,7 +149,7 @@ func TestNestedMetaStar(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.Nested.AField.Val, "A field")
 	assertEqual(t, len(inputs.Nested.AllFields), 3)
-	assertEqual(t, inputs.Nested.AllFields["cf_numeric_field"], 12.0)
+	assertEqual(t, inputs.Nested.AllFields["cf_numeric_field"], json.Number("12"))
 	assertEqual(t, inputs.Nested.AllFields["cf_other_field"], "Another field")
 	assertEqual(t, inputs.Nested.AllFields["a_field"], "A field")
 }

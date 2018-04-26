@@ -152,7 +152,9 @@ func (jv *jsonSource) Value(i interface{}) Errorable {
 
 func (jv *jsonSource) ValueMap() map[string]interface{} {
 	var out map[string]interface{}
-	if err := json.Unmarshal(jv.RawMessage, &out); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(jv.RawMessage))
+	dec.UseNumber()
+	if err := dec.Decode(&out); err != nil {
 		return nil
 	}
 	return out
