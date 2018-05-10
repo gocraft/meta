@@ -158,7 +158,7 @@ func (i Float64) Value() (driver.Value, error) {
 
 func (i Float64) MarshalJSON() ([]byte, error) {
 	if i.Present && !i.Null {
-		return json.Marshal(i.Val)
+		return MetaJson.Marshal(i.Val)
 	}
 	return nullString, nil
 }

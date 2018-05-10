@@ -1,9 +1,5 @@
 package meta
 
-import (
-	"encoding/json"
-)
-
 type Errorable interface {
 	// Errorable should be a go error
 	error
@@ -39,7 +35,7 @@ func (e ErrorAtom) Error() string {
 }
 
 func (eh ErrorHash) Error() string {
-	j, _ := json.Marshal(eh)
+	j, _ := MetaJson.Marshal(eh)
 	return string(j)
 }
 

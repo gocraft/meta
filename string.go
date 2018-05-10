@@ -219,7 +219,7 @@ func (s String) Value() (driver.Value, error) {
 
 func (s String) MarshalJSON() ([]byte, error) {
 	if s.Present && !s.Null {
-		return json.Marshal(s.Val)
+		return MetaJson.Marshal(s.Val)
 	}
 	return nullString, nil
 }

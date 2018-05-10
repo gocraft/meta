@@ -2,7 +2,6 @@ package meta
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"reflect"
 	"time"
 )
@@ -107,7 +106,7 @@ func (t Time) Value() (driver.Value, error) {
 
 func (t Time) MarshalJSON() ([]byte, error) {
 	if t.Present && !t.Null {
-		return json.Marshal(t.Val)
+		return MetaJson.Marshal(t.Val)
 	}
 	return nullString, nil
 }

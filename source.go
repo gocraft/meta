@@ -1,7 +1,6 @@
 package meta
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/url"
 	"strconv"
@@ -111,7 +110,7 @@ func (jv *jsonSource) Get(key string) source {
 	i, err := strconv.Atoi(key)
 	if err == nil {
 		var slice []json.RawMessage
-		err = json.Unmarshal(jv.RawMessage, &slice)
+		err = MetaJson.Unmarshal(jv.RawMessage, &slice)
 		if err != nil {
 			s.malformed = true
 			return s
@@ -123,7 +122,7 @@ func (jv *jsonSource) Get(key string) source {
 		return s
 	}
 	var m map[string]json.RawMessage
-	err = json.Unmarshal(jv.RawMessage, &m)
+	err = MetaJson.Unmarshal(jv.RawMessage, &m)
 	if err != nil {
 		s.malformed = true
 		return s
@@ -141,9 +140,7 @@ func (jv *jsonSource) Value(i interface{}) Errorable {
 		return ErrBlank
 	}
 
-	dec := json.NewDecoder(bytes.NewReader(jv.RawMessage))
-	dec.UseNumber()
-	err := dec.Decode(i)
+	err := MetaJson.UnmarshalUsingNumber(jv.RawMessage, i)
 	if err != nil {
 		return ErrMalformed
 	}
@@ -152,9 +149,9 @@ func (jv *jsonSource) Value(i interface{}) Errorable {
 
 func (jv *jsonSource) ValueMap() map[string]interface{} {
 	var out map[string]interface{}
-	dec := json.NewDecoder(bytes.NewReader(jv.RawMessage))
-	dec.UseNumber()
-	if err := dec.Decode(&out); err != nil {
+
+	err := MetaJson.UnmarshalUsingNumber(jv.RawMessage, &out)
+	if err != nil {
 		return nil
 	}
 	return out
