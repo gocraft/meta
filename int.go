@@ -305,14 +305,14 @@ func (i Uint64) Value() (driver.Value, error) {
 
 func (i Int64) MarshalJSON() ([]byte, error) {
 	if i.Present && !i.Null {
-		return json.Marshal(i.Val)
+		return MetaJson.Marshal(i.Val)
 	}
 	return nullString, nil
 }
 
 func (i Uint64) MarshalJSON() ([]byte, error) {
 	if i.Present && !i.Null {
-		return json.Marshal(i.Val)
+		return MetaJson.Marshal(i.Val)
 	}
 	return nullString, nil
 }
