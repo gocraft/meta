@@ -18,6 +18,7 @@ type String struct {
 	Val string
 	Nullity
 	Presence
+	Path string
 }
 
 type StringOptions struct {
@@ -36,7 +37,7 @@ type StringOptions struct {
 }
 
 func NewString(s string) String {
-	return String{s, Nullity{false}, Presence{true}}
+	return String{s, Nullity{false}, Presence{true}, ""}
 }
 
 func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
@@ -114,7 +115,8 @@ func (s *String) ParseOptions(tag reflect.StructTag) interface{} {
 	return opts
 }
 
-func (s *String) JSONValue(i interface{}, options interface{}) Errorable {
+func (s *String) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	s.Path = path
 	if i == nil {
 		opts := options.(*StringOptions)
 		if opts.Null {

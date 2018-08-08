@@ -16,6 +16,7 @@ type Float64 struct {
 	Val float64
 	Nullity
 	Presence
+	Path string
 }
 
 type FloatOptions struct {
@@ -30,7 +31,7 @@ type FloatOptions struct {
 }
 
 func NewFloat64(f float64) Float64 {
-	return Float64{f, Nullity{false}, Presence{true}}
+	return Float64{f, Nullity{false}, Presence{true}, ""}
 }
 
 func (i *Float64) ParseOptions(tag reflect.StructTag) interface{} {
@@ -84,7 +85,8 @@ func (i *Float64) ParseOptions(tag reflect.StructTag) interface{} {
 	return opts
 }
 
-func (f *Float64) JSONValue(i interface{}, options interface{}) Errorable {
+func (f *Float64) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	f.Path = path
 	if i == nil {
 		return f.FormValue("", options)
 	}

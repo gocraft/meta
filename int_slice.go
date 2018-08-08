@@ -10,7 +10,8 @@ import (
 //
 
 type Int64Slice struct {
-	Val []int64
+	Val  []int64
+	Path string
 }
 
 type IntSliceOptions struct {
@@ -27,7 +28,8 @@ func (i *Int64Slice) ParseOptions(tag reflect.StructTag) interface{} {
 	}
 }
 
-func (n *Int64Slice) JSONValue(i interface{}, options interface{}) Errorable {
+func (n *Int64Slice) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	n.Path = path
 	n.Val = nil
 	if i == nil {
 		return ErrBlank
@@ -55,7 +57,7 @@ func (n *Int64Slice) JSONValue(i interface{}, options interface{}) Errorable {
 
 		for _, v := range value {
 			var num Int64
-			if err := num.JSONValue(v, intOpts); err != nil {
+			if err := num.JSONValue("", v, intOpts); err != nil {
 				errorsInSlice = append(errorsInSlice, err)
 			} else {
 				errorsInSlice = append(errorsInSlice, nil)

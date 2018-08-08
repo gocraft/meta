@@ -19,6 +19,8 @@ type source interface {
 	// It should be set by the parent source.
 	// If the parent is malformed, its children must be malformed.
 	Malformed() bool
+	// the path to this source from the root
+	Path() string
 }
 
 type mergedSource []source
@@ -80,6 +82,14 @@ func (s mergedSource) ValueMap() map[string]interface{} {
 	return out
 }
 
+func (s mergedSource) Path() string {
+	if len(s) > 0 {
+		return s[0].Path()
+	} else {
+		return ""
+	}
+}
+
 func newJSONSource(b []byte) source {
 	return &jsonSource{
 		RawMessage: b,
@@ -89,6 +99,7 @@ func newJSONSource(b []byte) source {
 type jsonSource struct {
 	json.RawMessage
 	malformed bool
+	path      string
 }
 
 func (jv *jsonSource) Empty() bool {
@@ -100,8 +111,15 @@ func (jv *jsonSource) Malformed() bool {
 }
 
 func (jv *jsonSource) Get(key string) source {
+	var path string
+	if jv.path == "" {
+		path = key
+	} else {
+		path = jv.path + "." + key
+	}
 	s := &jsonSource{
 		malformed: jv.malformed,
+		path:      path,
 	}
 	if len(jv.RawMessage) == 0 {
 		return s
@@ -155,6 +173,10 @@ func (jv *jsonSource) ValueMap() map[string]interface{} {
 		return nil
 	}
 	return out
+}
+
+func (jv *jsonSource) Path() string {
+	return jv.path
 }
 
 func newFormValueSource(values url.Values) source {
@@ -216,4 +238,8 @@ func (fv *formValueSource) ValueMap() map[string]interface{} {
 		}
 	}
 	return out
+}
+
+func (fv *formValueSource) Path() string {
+	return fv.prefix
 }
