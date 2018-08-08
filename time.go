@@ -14,6 +14,7 @@ type Time struct {
 	Val time.Time
 	Nullity
 	Presence
+	Path string
 }
 
 type TimeOptions struct {
@@ -24,7 +25,7 @@ type TimeOptions struct {
 }
 
 func NewTime(t time.Time) Time {
-	return Time{t, Nullity{false}, Presence{true}}
+	return Time{t, Nullity{false}, Presence{true}, ""}
 }
 
 func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
@@ -54,7 +55,8 @@ func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
 	return opts
 }
 
-func (t *Time) JSONValue(i interface{}, options interface{}) Errorable {
+func (t *Time) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	t.Path = path
 	if i == nil {
 		return t.FormValue("", options)
 	}

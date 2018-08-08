@@ -15,6 +15,7 @@ type Bool struct {
 	Val bool
 	Nullity
 	Presence
+	Path string
 }
 
 type BoolOptions struct {
@@ -24,7 +25,7 @@ type BoolOptions struct {
 }
 
 func NewBool(b bool) Bool {
-	return Bool{b, Nullity{false}, Presence{true}}
+	return Bool{b, Nullity{false}, Presence{true}, ""}
 }
 
 func (b *Bool) ParseOptions(tag reflect.StructTag) interface{} {
@@ -77,8 +78,9 @@ func (b *Bool) FormValue(value string, options interface{}) Errorable {
 	return ErrBool
 }
 
-func (b *Bool) JSONValue(i interface{}, options interface{}) Errorable {
+func (b *Bool) JSONValue(path string, i interface{}, options interface{}) Errorable {
 	opts := options.(*BoolOptions)
+	b.Path = path
 
 	if i == nil {
 		if opts.Null {

@@ -11,7 +11,7 @@ import (
 
 type Valuer interface {
 	ParseOptions(tag reflect.StructTag) interface{}
-	JSONValue(value interface{}, options interface{}) Errorable
+	JSONValue(path string, value interface{}, options interface{}) Errorable
 }
 
 var (
@@ -315,7 +315,7 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 					fieldValue.Set(reflect.New(dfield.indirectedType))
 					valuerValue = fieldValue
 				}
-				err = valuerValue.Interface().(Valuer).JSONValue(val, dfield.Options)
+				err = valuerValue.Interface().(Valuer).JSONValue(nestedValues.Path(), val, dfield.Options)
 				if err != nil && !dfield.DiscardInvalid {
 					errs = addError(errs, metaName, err)
 				}
@@ -365,7 +365,7 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 				var val interface{}
 				nestedValues.Value(&val)
 				elPtrValue := reflect.New(dfield.elemIndirectedType)
-				err := elPtrValue.Interface().(Valuer).JSONValue(val, dfield.Options)
+				err := elPtrValue.Interface().(Valuer).JSONValue(nestedValues.Path(), val, dfield.Options)
 				if err != nil {
 					errorsInSlice = append(errorsInSlice, err)
 				} else {

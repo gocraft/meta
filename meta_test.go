@@ -46,6 +46,7 @@ func TestNewDecoder(t *testing.T) {
 	e = withMetaNameDecoder.DecodeJSON(&inputs, []byte(`{"with_camel_case":1,"poopin":2,"ignored":3}`))
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.WithCamelCase.Val, "1")
+	assertEqual(t, inputs.WithCamelCase.Path, "with_camel_case")
 	assertEqual(t, inputs.OtherField.Val, "2")
 	assertEqual(t, inputs.Ignored.Val, "")
 }
@@ -107,13 +108,13 @@ func TestValuers(t *testing.T) {
 	assertEqual(t, "", v)
 
 	// Int
-	i64 := Int64{1, Nullity{false}, Presence{true}}
+	i64 := Int64{1, Nullity{false}, Presence{true}, ""}
 	valuer = i64
 	v, err = valuer.Value()
 	assert(t, err == nil)
 	assertEqual(t, int64(1), v)
 
-	ui64 := Uint64{1, Nullity{false}, Presence{true}}
+	ui64 := Uint64{1, Nullity{false}, Presence{true}, ""}
 	valuer = ui64
 	v, err = valuer.Value()
 	assert(t, err == nil)
@@ -173,6 +174,7 @@ func TestWithSelfReference(t *testing.T) {
 	assertEqual(t, len(inputs.Children[1].Children), 1)
 	assertEqual(t, inputs.Children[1].Children[0].Name.Val, "grandchild")
 	assertEqual(t, len(inputs.Children[1].Children[0].Children), 0)
+	assertEqual(t, inputs.Children[1].Children[0].Name.Path, "children.1.children.0.name")
 }
 
 // TODO: test default values

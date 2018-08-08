@@ -16,12 +16,14 @@ type Int64 struct {
 	Val int64
 	Nullity
 	Presence
+	Path string
 }
 
 type Uint64 struct {
 	Val uint64
 	Nullity
 	Presence
+	Path string
 }
 
 type IntOptions struct {
@@ -47,11 +49,11 @@ type UintOptions struct {
 }
 
 func NewInt64(val int64) Int64 {
-	return Int64{val, Nullity{false}, Presence{true}}
+	return Int64{val, Nullity{false}, Presence{true}, ""}
 }
 
 func NewUint64(val uint64) Uint64 {
-	return Uint64{val, Nullity{false}, Presence{true}}
+	return Uint64{val, Nullity{false}, Presence{true}, ""}
 }
 
 func (i *Int64) ParseOptions(tag reflect.StructTag) interface{} {
@@ -156,7 +158,8 @@ func (i *Uint64) ParseOptions(tag reflect.StructTag) interface{} {
 	return opts
 }
 
-func (n *Int64) JSONValue(i interface{}, options interface{}) Errorable {
+func (n *Int64) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	n.Path = path
 	if i == nil {
 		return n.FormValue("", options)
 	}
@@ -222,7 +225,8 @@ func (i *Int64) FormValue(value string, options interface{}) Errorable {
 	return nil
 }
 
-func (n *Uint64) JSONValue(i interface{}, options interface{}) Errorable {
+func (n *Uint64) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	n.Path = path
 	if i == nil {
 		return n.FormValue("", options)
 	}

@@ -7,7 +7,8 @@ import (
 )
 
 type StringSlice struct {
-	Val []string
+	Val  []string
+	Path string
 }
 
 type StringSliceOptions struct {
@@ -32,7 +33,8 @@ func (i *StringSlice) ParseOptions(tag reflect.StructTag) interface{} {
 	}
 }
 
-func (n *StringSlice) JSONValue(i interface{}, options interface{}) Errorable {
+func (n *StringSlice) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	n.Path = path
 	n.Val = nil
 	if i == nil {
 		return ErrBlank
@@ -60,7 +62,7 @@ func (n *StringSlice) JSONValue(i interface{}, options interface{}) Errorable {
 
 		for _, v := range value {
 			var s String
-			if err := s.JSONValue(v, stringOpts); err != nil {
+			if err := s.JSONValue("", v, stringOpts); err != nil {
 				errorsInSlice = append(errorsInSlice, err)
 				if err == ErrBlank && !opts.DiscardBlank {
 					n.Val = append(n.Val, s.Val)
