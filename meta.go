@@ -351,8 +351,9 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 			sliceValue := fieldValue
 			var errorsInSlice ErrorSlice
 
+			sliceSrc := src.Get(metaName)
 			for i := 0; true; i += 1 {
-				nestedValues := src.Get(metaName).Get(fmt.Sprint(i)) // foo_bar.0, foo_bar.1, ...
+				nestedValues := sliceSrc.Get(fmt.Sprint(i)) // foo_bar.0, foo_bar.1, ...
 				if nestedValues.Malformed() {
 					return ErrorHash{
 						"error": ErrMalformed,
@@ -387,8 +388,9 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 			var errorsInSlice ErrorSlice
 
 			var i int
+			sliceSrc := src.Get(metaName)
 			for ; true; i += 1 {
-				nestedValues := src.Get(metaName).Get(fmt.Sprint(i)) // foo_bar.0, foo_bar.1, ...
+				nestedValues := sliceSrc.Get(fmt.Sprint(i)) // foo_bar.0, foo_bar.1, ...
 				if nestedValues.Malformed() {
 					return ErrorHash{
 						"error": ErrMalformed,
