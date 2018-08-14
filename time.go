@@ -14,7 +14,8 @@ type Time struct {
 	Val time.Time
 	Nullity
 	Presence
-	Path string
+	Path   string
+	Format string
 }
 
 type TimeOptions struct {
@@ -25,7 +26,7 @@ type TimeOptions struct {
 }
 
 func NewTime(t time.Time) Time {
-	return Time{t, Nullity{false}, Presence{true}, ""}
+	return Time{t, Nullity{false}, Presence{true}, "", time.RFC3339}
 }
 
 func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
@@ -92,6 +93,7 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 		if v, err := time.Parse(format, value); err == nil {
 			t.Val = v
 			t.Present = true
+			t.Format = format
 			return nil
 		}
 	}
@@ -108,7 +110,7 @@ func (t Time) Value() (driver.Value, error) {
 
 func (t Time) MarshalJSON() ([]byte, error) {
 	if t.Present && !t.Null {
-		return MetaJson.Marshal(t.Val)
+		return MetaJson.Marshal(t.Val.Format(t.Format))
 	}
 	return nullString, nil
 }
