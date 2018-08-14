@@ -64,6 +64,9 @@ func TestTimeCustomFormat(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assert(t, inputs.A.Val.Equal(time.Date(2015, 9, 1, 0, 0, 0, 0, time.UTC)))
 	assertEqual(t, inputs.A.Present, true)
+
+	b, _ := inputs.A.MarshalJSON()
+	assertEqual(t, string(b), "9/1/2015")
 }
 
 func TestMultipleFormats(t *testing.T) {
