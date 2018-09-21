@@ -179,32 +179,52 @@ func (jv *jsonSource) Path() string {
 	return jv.path
 }
 
-func newFormValueSource(values url.Values) source {
-	return &formValueSource{Values: values}
+func newFormValueSource(urlValues url.Values) source {
+	root := make(map[string]interface{})
+	for key, v := range urlValues {
+		keyParts := strings.Split(key, ".")
+		m := root
+		for i, k := range keyParts {
+			if i == len(keyParts)-1 {
+				if len(v) == 1 {
+					m[k] = v[0]
+				} else {
+					m[k] = v
+				}
+			} else {
+				m2, ok := m[k].(map[string]interface{})
+				if !ok {
+					m2 = make(map[string]interface{})
+					m[k] = m2
+				}
+				m = m2
+			}
+		}
+	}
+	if len(root) > 0 {
+		return &formValueSource{value: root}
+	}
+	return &formValueSource{}
 }
 
 type formValueSource struct {
-	url.Values
-	prefix string
+	value interface{}
+	path  string
 }
 
 func (fv *formValueSource) Empty() bool {
-	for key := range fv.Values {
-		if key == fv.prefix || strings.HasPrefix(key, fv.prefix+".") {
-			return false
-		}
-	}
-	return true
+	return fv.value == nil
 }
 
 func (fv *formValueSource) Get(key string) source {
-	if fv.prefix != "" {
-		key = fv.prefix + "." + key
+	path := key
+	if fv.path != "" {
+		path = fv.path + "." + key
 	}
-	return &formValueSource{
-		Values: fv.Values,
-		prefix: key,
+	if m, ok := fv.value.(map[string]interface{}); ok {
+		return &formValueSource{value: m[key], path: path}
 	}
+	return &formValueSource{path: path}
 }
 
 func (fv *formValueSource) Malformed() bool {
@@ -212,12 +232,9 @@ func (fv *formValueSource) Malformed() bool {
 }
 
 func (fv *formValueSource) Value(i interface{}) Errorable {
-	value := fv.Values.Get(fv.prefix)
 	switch v := i.(type) {
-	case *string:
-		*v = value
 	case *interface{}:
-		*v = value
+		*v = fv.value
 	default:
 		return ErrBlank
 	}
@@ -225,21 +242,12 @@ func (fv *formValueSource) Value(i interface{}) Errorable {
 }
 
 func (fv *formValueSource) ValueMap() map[string]interface{} {
-	out := make(map[string]interface{})
-	for k, v := range fv.Values {
-		if fv.prefix != "" && !strings.HasPrefix(k, fv.prefix+".") {
-			continue
-		}
-		key := strings.TrimPrefix(k, fv.prefix+".")
-		if len(v) == 1 {
-			out[key] = v[0]
-		} else {
-			out[key] = v
-		}
+	if m, ok := fv.value.(map[string]interface{}); ok {
+		return m
 	}
-	return out
+	return map[string]interface{}{}
 }
 
 func (fv *formValueSource) Path() string {
-	return fv.prefix
+	return fv.path
 }

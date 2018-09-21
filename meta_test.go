@@ -177,4 +177,39 @@ func TestWithSelfReference(t *testing.T) {
 	assertEqual(t, inputs.Children[1].Children[0].Name.Path, "children.1.children.0.name")
 }
 
+type ObjectValuer struct {
+	Val map[string]interface{}
+}
+
+func (v *ObjectValuer) ParseOptions(tag reflect.StructTag) interface{} {
+	return nil
+}
+
+func (v *ObjectValuer) JSONValue(path string, i interface{}, options interface{}) Errorable {
+	v.Val = i.(map[string]interface{})
+	return nil
+}
+
+type WithObjectValuer struct {
+	A ObjectValuer
+}
+
+var objectValuerDecoder = NewDecoder(WithObjectValuer{})
+
+func TestObjectValuer(t *testing.T) {
+	// json
+	var inputs WithObjectValuer
+	e := objectValuerDecoder.Decode(&inputs, nil, []byte(`{"a": {"b": 1}}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, len(inputs.A.Val), 1)
+	assertEqual(t, json.Number("1"), inputs.A.Val["b"])
+
+	// url.Values
+	inputs = WithObjectValuer{}
+	e = objectValuerDecoder.DecodeValues(&inputs, url.Values{"a.b": {"1"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, len(inputs.A.Val), 1)
+	assertEqual(t, "1", inputs.A.Val["b"])
+}
+
 // TODO: test default values
