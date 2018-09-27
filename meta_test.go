@@ -68,12 +68,23 @@ func TestMultiSource(t *testing.T) {
 	assertEqual(t, inputs.Ignored.Val, "")
 }
 
+type withNullable struct {
+	A String
+	B String `meta_null:"true"`
+	C String `meta_null:"true"`
+}
+
+var withNullableDecoder = NewDecoder(withNullable{})
+
 func TestMapSource(t *testing.T) {
-	var inputs withMetaName
-	e := withMetaNameDecoder.DecodeMap(&inputs, map[string]interface{}{"with_camel_case": "1", "poopin": "2"})
+	var inputs withNullable
+	e := withNullableDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "1", "b": nil})
 	assertEqual(t, e, ErrorHash(nil))
-	assertEqual(t, inputs.WithCamelCase.Val, "1")
-	assertEqual(t, inputs.OtherField.Val, "2")
+	assertEqual(t, inputs.A.Val, "1")
+	assertEqual(t, inputs.B.Present, true)
+	assertEqual(t, inputs.B.Null, true)
+	assertEqual(t, inputs.C.Present, false)
+	assertEqual(t, inputs.C.Null, false)
 }
 
 func TestErrorsAreJsonable(t *testing.T) {
