@@ -179,6 +179,10 @@ func (jv *jsonSource) Path() string {
 	return jv.path
 }
 
+func newMapSource(m map[string]interface{}) source {
+	return &formValueSource{value: m}
+}
+
 func newFormValueSource(urlValues url.Values) source {
 	root := make(map[string]interface{})
 	for key, v := range urlValues {
