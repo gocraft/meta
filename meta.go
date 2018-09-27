@@ -273,6 +273,10 @@ func (d *Decoder) DecodeValues(dest interface{}, values url.Values) ErrorHash {
 	return d.Decode(dest, values, nil)
 }
 
+func (d *Decoder) DecodeMap(dest interface{}, m map[string]interface{}) ErrorHash {
+	return d.decode(reflect.ValueOf(dest), newMapSource(m))
+}
+
 func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 	var errs ErrorHash
 

@@ -68,6 +68,14 @@ func TestMultiSource(t *testing.T) {
 	assertEqual(t, inputs.Ignored.Val, "")
 }
 
+func TestMapSource(t *testing.T) {
+	var inputs withMetaName
+	e := withMetaNameDecoder.DecodeMap(&inputs, map[string]interface{}{"with_camel_case": "1", "poopin": "2"})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.WithCamelCase.Val, "1")
+	assertEqual(t, inputs.OtherField.Val, "2")
+}
+
 func TestErrorsAreJsonable(t *testing.T) {
 	var inputs withMetaName
 	e := withMetaNameDecoder.DecodeValues(&inputs, url.Values{})
