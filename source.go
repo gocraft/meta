@@ -23,6 +23,10 @@ type source interface {
 	Path() string
 }
 
+//
+// merged source
+//
+
 type mergedSource []source
 
 func newMergedSource(src ...source) source {
@@ -95,6 +99,10 @@ func newJSONSource(b []byte) source {
 		RawMessage: b,
 	}
 }
+
+//
+// json source
+//
 
 type jsonSource struct {
 	json.RawMessage
@@ -179,9 +187,9 @@ func (jv *jsonSource) Path() string {
 	return jv.path
 }
 
-func newMapSource(m map[string]interface{}) source {
-	return &formValueSource{value: m}
-}
+//
+// form value source
+//
 
 func newFormValueSource(urlValues url.Values) source {
 	root := make(map[string]interface{})
@@ -206,52 +214,132 @@ func newFormValueSource(urlValues url.Values) source {
 		}
 	}
 	if len(root) > 0 {
-		return &formValueSource{value: root}
+		return &mapSource{value: root}
 	}
-	return &formValueSource{}
+	return &emptySource{}
 }
 
-type formValueSource struct {
-	value interface{}
+//
+// map source
+//
+
+func newMapSource(m map[string]interface{}) source {
+	return &mapSource{value: m}
+}
+
+type mapSource struct {
+	value map[string]interface{}
 	path  string
 }
 
-func (fv *formValueSource) Empty() bool {
-	return fv.value == nil
-}
-
-func (fv *formValueSource) Get(key string) source {
-	path := key
-	if fv.path != "" {
-		path = fv.path + "." + key
-	}
-	if m, ok := fv.value.(map[string]interface{}); ok {
-		return &formValueSource{value: m[key], path: path}
-	}
-	return &formValueSource{path: path}
-}
-
-func (fv *formValueSource) Malformed() bool {
+func (s *mapSource) Empty() bool {
 	return false
 }
 
-func (fv *formValueSource) Value(i interface{}) Errorable {
+func (s *mapSource) Get(key string) source {
+	if v, ok := s.value[key]; ok {
+		path := key
+		if s.path != "" {
+			path = s.path + "." + key
+		}
+
+		switch val := v.(type) {
+		case map[string]interface{}:
+			return &mapSource{value: val, path: path}
+		default:
+			return &valueSource{value: v, path: path}
+		}
+	}
+	return &emptySource{}
+}
+
+func (s *mapSource) Malformed() bool {
+	return false
+}
+
+func (s *mapSource) Value(i interface{}) Errorable {
 	switch v := i.(type) {
 	case *interface{}:
-		*v = fv.value
+		*v = s.value
 	default:
 		return ErrBlank
 	}
 	return nil
 }
 
-func (fv *formValueSource) ValueMap() map[string]interface{} {
-	if m, ok := fv.value.(map[string]interface{}); ok {
-		return m
-	}
-	return map[string]interface{}{}
+func (s *mapSource) ValueMap() map[string]interface{} {
+	return s.value
 }
 
-func (fv *formValueSource) Path() string {
-	return fv.path
+func (s *mapSource) Path() string {
+	return s.path
+}
+
+//
+// value source
+//
+
+type valueSource struct {
+	path  string
+	value interface{}
+}
+
+func (s *valueSource) Get(key string) source {
+	return s
+}
+
+func (s *valueSource) Value(i interface{}) Errorable {
+	switch v := i.(type) {
+	case *interface{}:
+		*v = s.value
+	default:
+		return ErrBlank
+	}
+	return nil
+}
+
+func (s *valueSource) Empty() bool {
+	return false
+}
+
+func (s *valueSource) ValueMap() map[string]interface{} {
+	return nil
+}
+
+func (s *valueSource) Malformed() bool {
+	return false
+}
+
+func (s *valueSource) Path() string {
+	return s.path
+}
+
+//
+// empty source
+//
+
+type emptySource struct{}
+
+func (s *emptySource) Get(key string) source {
+	return s
+}
+
+func (s *emptySource) Value(interface{}) Errorable {
+	return nil
+}
+
+func (s *emptySource) Empty() bool {
+	return true
+}
+
+func (s *emptySource) ValueMap() map[string]interface{} {
+	return nil
+}
+
+func (s *emptySource) Malformed() bool {
+	return false
+}
+
+func (s *emptySource) Path() string {
+	return ""
 }
