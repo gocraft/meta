@@ -285,7 +285,7 @@ type valueSource struct {
 }
 
 func (s *valueSource) Get(key string) source {
-	return s
+	return &emptySource{}
 }
 
 func (s *valueSource) Value(i interface{}) Errorable {
