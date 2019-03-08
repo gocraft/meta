@@ -44,6 +44,11 @@ func TestStringSliceSuccess(t *testing.T) {
 	e = withStringSliceDecoder.DecodeJSON(&inputs, []byte(`{"a":["rrr", true, false, 1]}`))
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, []string{"rrr", "true", "false", "1"})
+
+	// decode map
+	e = withStringSliceDecoder.DecodeMap(&inputs, map[string]interface{}{"a": []interface{}{"aaa", "bbb"}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, []string{"aaa", "bbb"})
 }
 
 func TestStringSliceBlank(t *testing.T) {

@@ -92,6 +92,10 @@ func (f *Float64) JSONValue(path string, i interface{}, options interface{}) Err
 	}
 
 	switch value := i.(type) {
+	case float64:
+		f.Val = value
+		f.Present = true
+		return nil
 	case json.Number:
 		return f.FormValue(string(value), options)
 	case string:

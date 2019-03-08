@@ -46,6 +46,16 @@ func TestFloatSuccess(t *testing.T) {
 	assertEqual(t, inputs.B.Val, float64(2))
 	assertEqual(t, inputs.B.Present, true)
 	assertEqual(t, inputs.B.Null, false)
+
+	inputs = withFloat{}
+	e = withFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -1.1, "b": 2.2})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, -1.1)
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.B.Val, 2.2)
+	assertEqual(t, inputs.B.Present, true)
+	assertEqual(t, inputs.B.Null, false)
 }
 
 func TestFloatBlank(t *testing.T) {

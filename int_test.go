@@ -30,6 +30,12 @@ func TestIntSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, int64(-1))
 	assertEqual(t, inputs.B.Val, int64(2))
+
+	inputs = withInt{}
+	e = withIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -1, "b": 2})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, int64(-1))
+	assertEqual(t, inputs.B.Val, int64(2))
 }
 
 func TestIntBlank(t *testing.T) {

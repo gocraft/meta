@@ -62,6 +62,26 @@ func (t *Time) JSONValue(path string, i interface{}, options interface{}) Errora
 	}
 
 	switch value := i.(type) {
+	case time.Time:
+		if value.IsZero() {
+			opts := options.(*TimeOptions)
+			if opts.Null {
+				t.Present = true
+				t.Null = true
+				return nil
+			}
+			if opts.Required {
+				return ErrBlank
+			}
+			if !opts.DiscardBlank {
+				t.Present = true
+				return ErrBlank
+			}
+			return nil
+		}
+		t.Present = true
+		t.Val = value
+		return nil
 	case string:
 		return t.FormValue(value, options)
 	}

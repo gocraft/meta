@@ -37,6 +37,10 @@ func TestIntSliceSuccess(t *testing.T) {
 	e = withIntSliceDecoder.DecodeJSON(&inputs, []byte(`{"a":[-2,9,"30"]}`))
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, []int64{-2, 9, 30})
+
+	e = withIntSliceDecoder.DecodeMap(&inputs, map[string]interface{}{"a": []interface{}{-2, 9}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, []int64{-2, 9})
 }
 
 func TestIntSliceBlank(t *testing.T) {

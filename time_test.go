@@ -24,6 +24,11 @@ func TestTimeSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assert(t, inputs.A.Val.Equal(time.Date(2016, 6, 2, 16, 33, 22, 0, time.UTC)))
 	assertEqual(t, inputs.A.Present, true)
+
+	e = withTimeDecoder.DecodeMap(&inputs, map[string]interface{}{"a": time.Date(2016, 6, 2, 16, 33, 22, 0, time.UTC)})
+	assertEqual(t, e, ErrorHash(nil))
+	assert(t, inputs.A.Val.Equal(time.Date(2016, 6, 2, 16, 33, 22, 0, time.UTC)))
+	assertEqual(t, inputs.A.Present, true)
 }
 
 func TestTimeBlank(t *testing.T) {
@@ -34,6 +39,10 @@ func TestTimeBlank(t *testing.T) {
 	assertEqual(t, inputs.A.Present, false)
 
 	e = withTimeDecoder.DecodeJSON(&inputs, []byte(`{"a":""}`))
+	assertEqual(t, e, ErrorHash{"a": ErrBlank})
+	assertEqual(t, inputs.A.Present, false)
+
+	e = withTimeDecoder.DecodeMap(&inputs, map[string]interface{}{"a": time.Time{}})
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 	assertEqual(t, inputs.A.Present, false)
 }
@@ -137,6 +146,11 @@ func TestOptionalTimeBlank(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assert(t, inputs.A.Val.IsZero())
+
+	e = withOptionalTimeDecoder.DecodeMap(&inputs, map[string]interface{}{"a": time.Time{}})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assert(t, inputs.A.Val.IsZero())
 }
 
 func TestOptionalTimeBlankFailure(t *testing.T) {
@@ -151,6 +165,9 @@ func TestOptionalTimeBlankFailure(t *testing.T) {
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 
 	e = NewDecoder(&inputs).DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash{"a": ErrBlank})
+
+	e = NewDecoder(&inputs).DecodeMap(&inputs, map[string]interface{}{"a": time.Time{}})
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 }
 
@@ -186,6 +203,12 @@ func TestOptionalNullTimeNull(t *testing.T) {
 
 	inputs = withOptionalNullTime{}
 	e = withOptionalNullTimeDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assert(t, inputs.A.Val.IsZero())
+
+	e = withOptionalNullTimeDecoder.DecodeMap(&inputs, map[string]interface{}{"a": time.Time{}})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, true)
