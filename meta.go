@@ -101,7 +101,7 @@ type DecoderField struct {
 }
 
 type Decoder struct {
-	structType reflect.Type
+	StructType reflect.Type
 	Fields     []DecoderField
 	Options    DecoderOptions
 }
@@ -125,7 +125,7 @@ func NewDecoderWithOptions(destStruct interface{}, options DecoderOptions) *Deco
 		panic(fmt.Sprintf("expect ptr to struct or struct, got %s", destValue.Kind()))
 	}
 
-	decoder := &Decoder{structType: destType}
+	decoder := &Decoder{StructType: destType}
 
 	fieldCount := indirectedDest.NumField()
 	for i := 0; i < fieldCount; i += 1 {
@@ -286,8 +286,8 @@ func (d *Decoder) decode(destValue reflect.Value, src source) ErrorHash {
 		panic(fmt.Sprintf("expect ptr, got %s", destValue.Kind()))
 	}
 
-	if indirectedDest.Type() != d.structType {
-		panic(fmt.Sprintf("expect type %s, got %s", d.structType, indirectedDest.Type()))
+	if indirectedDest.Type() != d.StructType {
+		panic(fmt.Sprintf("expect type %s, got %s", d.StructType, indirectedDest.Type()))
 	}
 
 	for _, dfield := range d.Fields {
@@ -460,7 +460,7 @@ func (d *Decoder) NewDecoded(values url.Values, r io.Reader) (interface{}, Error
 		}
 	}
 
-	dest := reflect.New(d.structType).Interface()
+	dest := reflect.New(d.StructType).Interface()
 	if err := d.Decode(dest, values, b); err != nil {
 		return nil, err
 	}
