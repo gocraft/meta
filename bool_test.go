@@ -54,6 +54,12 @@ func TestBoolSuccess(t *testing.T) {
 		assertEqual(t, inputs.A.Val, false)
 		assertEqual(t, inputs.A.Present, true)
 	}
+
+	var inputs withBool
+	e := withBoolDecoder.DecodeMap(&inputs, map[string]interface{}{"a": true})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, true)
+	assertEqual(t, inputs.A.Present, true)
 }
 
 func TestBoolBlank(t *testing.T) {

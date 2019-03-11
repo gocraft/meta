@@ -24,6 +24,11 @@ func TestStringSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, "Okay")
 	assertEqual(t, inputs.A.Present, true)
+
+	e = withStringDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "Okay"})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, "Okay")
+	assertEqual(t, inputs.A.Present, true)
 }
 
 func TestStringRequired(t *testing.T) { // Missing -> required

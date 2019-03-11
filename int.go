@@ -165,6 +165,14 @@ func (n *Int64) JSONValue(path string, i interface{}, options interface{}) Error
 	}
 
 	switch value := i.(type) {
+	case int:
+		n.Val = int64(value)
+		n.Present = true
+		return nil
+	case int64:
+		n.Val = value
+		n.Present = true
+		return nil
 	case json.Number:
 		return n.FormValue(string(value), options)
 	case string:
