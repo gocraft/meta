@@ -162,6 +162,12 @@ func TestUintSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, uint64(0))
 	assertEqual(t, inputs.B.Val, uint64(2))
+
+	inputs = withUint{}
+	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 1, "b": 0})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Val, uint64(1))
+	assertEqual(t, inputs.B.Val, uint64(0))
 }
 
 func TestUintBlank(t *testing.T) {
