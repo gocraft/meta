@@ -240,6 +240,18 @@ func (n *Uint64) JSONValue(path string, i interface{}, options interface{}) Erro
 	}
 
 	switch value := i.(type) {
+	case int:
+		n.Val = uint64(value)
+		n.Present = true
+		return nil
+	case int64:
+		n.Val = uint64(value)
+		n.Present = true
+		return nil
+	case uint64:
+		n.Val = value
+		n.Present = true
+		return nil
 	case json.Number:
 		return n.FormValue(string(value), options)
 	case string:
