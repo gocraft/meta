@@ -246,6 +246,8 @@ func (s *mapSource) Get(key string) source {
 		switch val := v.(type) {
 		case map[string]interface{}:
 			return &mapSource{value: val, path: path}
+		case []interface{}:
+			return &sliceSource{value: val, path: path}
 		default:
 			return &valueSource{value: v, path: path}
 		}
@@ -272,6 +274,71 @@ func (s *mapSource) ValueMap() map[string]interface{} {
 }
 
 func (s *mapSource) Path() string {
+	return s.path
+}
+
+//
+// slice source
+//
+
+type sliceSource struct {
+	value     []interface{}
+	path      string
+	malformed bool
+}
+
+func (s *sliceSource) Empty() bool {
+	return len(s.value) == 0
+}
+
+func (s *sliceSource) Get(key string) source {
+	index, err := strconv.Atoi(key)
+	if err != nil {
+		s.malformed = true
+		return s
+	}
+	if index < len(s.value) {
+		v := s.value[index]
+		path := key
+		if s.path != "" {
+			path = s.path + "." + key
+		}
+
+		switch val := v.(type) {
+		case map[string]interface{}:
+			return &mapSource{value: val, path: path}
+		case []interface{}:
+			return &sliceSource{value: val, path: path}
+		default:
+			return &valueSource{value: v, path: path}
+		}
+	}
+	return &emptySource{}
+}
+
+func (s *sliceSource) Malformed() bool {
+	return s.malformed
+}
+
+func (s *sliceSource) Value(i interface{}) Errorable {
+	switch v := i.(type) {
+	case *interface{}:
+		*v = s.value
+	default:
+		return ErrBlank
+	}
+	return nil
+}
+
+func (s *sliceSource) ValueMap() map[string]interface{} {
+	values := make(map[string]interface{}, len(s.value))
+	for i, v := range s.value {
+		values[strconv.Itoa(i)] = v
+	}
+	return values
+}
+
+func (s *sliceSource) Path() string {
 	return s.path
 }
 

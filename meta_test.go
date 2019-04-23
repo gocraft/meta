@@ -72,19 +72,23 @@ type withNullable struct {
 	A String
 	B String `meta_null:"true"`
 	C String `meta_null:"true"`
+	D []String
 }
 
 var withNullableDecoder = NewDecoder(withNullable{})
 
 func TestMapSource(t *testing.T) {
 	var inputs withNullable
-	e := withNullableDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "1", "b": nil})
+	e := withNullableDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "1", "b": nil, "d": []interface{}{"a", "b"}})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, "1")
 	assertEqual(t, inputs.B.Present, true)
 	assertEqual(t, inputs.B.Null, true)
 	assertEqual(t, inputs.C.Present, false)
 	assertEqual(t, inputs.C.Null, false)
+	assertEqual(t, len(inputs.D), 2)
+	assertEqual(t, inputs.D[0].Val, "a")
+	assertEqual(t, inputs.D[1].Val, "b")
 }
 
 func TestErrorsAreJsonable(t *testing.T) {
