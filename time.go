@@ -3,6 +3,8 @@ package meta
 import (
 	"database/sql/driver"
 	"reflect"
+	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -33,7 +35,7 @@ func (t *Time) ParseOptions(tag reflect.StructTag) interface{} {
 		Required:     false,
 		DiscardBlank: true,
 		Null:         false,
-		Format:       []string{time.RFC3339},
+		Format:       []string{time.RFC3339, "expression"},
 	}
 
 	if tag.Get("meta_required") == "true" {
@@ -89,6 +91,70 @@ func (t *Time) JSONValue(path string, i interface{}, options interface{}) Errora
 	return ErrTime
 }
 
+type expressionParser struct {
+	*regexp.Regexp
+	Parse func([]string) (time.Time, bool)
+}
+
+var timeExpressionParsers = []expressionParser{
+	{
+		Regexp: regexp.MustCompile(`^(\d+)_(year|month|week|day|hour|minute|second|nanosecond)s?_(ago|from_now)$`),
+		Parse: func(matches []string) (time.Time, bool) {
+			delta, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return time.Time{}, false
+			}
+			if matches[3] == "ago" {
+				delta = -delta
+			}
+			switch matches[2] {
+			case "year":
+				return time.Now().AddDate(delta, 0, 0), true
+			case "month":
+				return time.Now().AddDate(0, delta, 0), true
+			case "week":
+				return time.Now().AddDate(0, 0, delta*7), true
+			case "day":
+				return time.Now().AddDate(0, 0, delta), true
+			case "hour":
+				return time.Now().Add(time.Duration(delta) * time.Hour), true
+			case "minute":
+				return time.Now().Add(time.Duration(delta) * time.Minute), true
+			case "second":
+				return time.Now().Add(time.Duration(delta) * time.Second), true
+			case "nanosecond":
+				return time.Now().Add(time.Duration(delta) * time.Nanosecond), true
+			}
+
+			return time.Time{}, false
+		},
+	},
+	{
+		Regexp: regexp.MustCompile(`^now$`),
+		Parse: func(matches []string) (time.Time, bool) {
+			return time.Now(), true
+		},
+	},
+	{
+		Regexp: regexp.MustCompile(`^today$`),
+		Parse: func(matches []string) (time.Time, bool) {
+			return time.Now().Truncate(24 * time.Hour), true
+		},
+	},
+	{
+		Regexp: regexp.MustCompile(`^yesterday$`),
+		Parse: func(matches []string) (time.Time, bool) {
+			return time.Now().Truncate(24*time.Hour).AddDate(0, 0, -1), true
+		},
+	},
+	{
+		Regexp: regexp.MustCompile(`^tomorrow$`),
+		Parse: func(matches []string) (time.Time, bool) {
+			return time.Now().Truncate(24*time.Hour).AddDate(0, 0, 1), true
+		},
+	},
+}
+
 func (t *Time) FormValue(value string, options interface{}) Errorable {
 	opts := options.(*TimeOptions)
 
@@ -109,6 +175,20 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 	}
 
 	for _, format := range opts.Format {
+		if format == "expression" {
+			for _, parser := range timeExpressionParsers {
+				submatches := parser.Regexp.FindStringSubmatch(value)
+				if len(submatches) == 0 {
+					continue
+				}
+				if v, ok := parser.Parse(submatches); ok {
+					t.Val = v
+					t.Present = true
+					return nil
+				}
+			}
+		}
+
 		if v, err := time.Parse(format, value); err == nil {
 			t.Val = v
 			t.Present = true
