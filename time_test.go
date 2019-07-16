@@ -230,3 +230,100 @@ func TestOptionalNullTimeOmitted(t *testing.T) {
 	assertEqual(t, inputs.A.Null, false)
 	assert(t, inputs.A.Val.IsZero())
 }
+
+func assertTimeInRange(t *testing.T, value, start, end time.Time) {
+	assert(t, value.Equal(start) || value.After(start))
+	assert(t, value.Equal(end) || value.Before(end))
+}
+
+func TestTimeExpressions(t *testing.T) {
+	for expression, assertion := range map[string]func(output, before, after time.Time){
+		// Simple keywords
+		"now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before, after)
+		},
+		"today": func(output, before, after time.Time) {
+			assertTimeInRange(t, output,
+				time.Date(before.Year(), before.Month(), before.Day(), 0, 0, 0, 0, time.UTC),
+				time.Date(after.Year(), after.Month(), after.Day(), 0, 0, 0, 0, time.UTC),
+			)
+		},
+		"yesterday": func(output, before, after time.Time) {
+			assertTimeInRange(t, output,
+				time.Date(before.Year(), before.Month(), before.Day()-1, 0, 0, 0, 0, time.UTC),
+				time.Date(after.Year(), after.Month(), after.Day()-1, 0, 0, 0, 0, time.UTC),
+			)
+		},
+		"tomorrow": func(output, before, after time.Time) {
+			assertTimeInRange(t, output,
+				time.Date(before.Year(), before.Month(), before.Day()+1, 0, 0, 0, 0, time.UTC),
+				time.Date(after.Year(), after.Month(), after.Day()+1, 0, 0, 0, 0, time.UTC),
+			)
+		},
+		// Past expressions (<n>_<unit>_ago)
+		"99_nanoseconds_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(-99*time.Nanosecond), after.Add(-99*time.Nanosecond))
+		},
+		"31_seconds_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(-31*time.Second), after.Add(-31*time.Second))
+		},
+		"1_minute_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(-time.Minute), after.Add(-time.Minute))
+		},
+		"48_hours_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(-48*time.Hour), after.Add(-48*time.Hour))
+		},
+		"1_day_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, -1), after.AddDate(0, 0, -1))
+		},
+		"5_days_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, -5), after.AddDate(0, 0, -5))
+		},
+		"3_weeks_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, -21), after.AddDate(0, 0, -21))
+		},
+		"2_months_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, -2, 0), after.AddDate(0, -2, 0))
+		},
+		"4_years_ago": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(-4, 0, 0), after.AddDate(-4, 0, 0))
+		},
+		// Future expressions (<n>_<unit>_from_now)
+		"99_nanoseconds_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(99*time.Nanosecond), after.Add(99*time.Nanosecond))
+		},
+		"31_seconds_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(31*time.Second), after.Add(31*time.Second))
+		},
+		"1_minute_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(time.Minute), after.Add(time.Minute))
+		},
+		"48_hours_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.Add(48*time.Hour), after.Add(48*time.Hour))
+		},
+		"1_day_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, 1), after.AddDate(0, 0, 1))
+		},
+		"5_days_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, 5), after.AddDate(0, 0, 5))
+		},
+		"3_weeks_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 0, 21), after.AddDate(0, 0, 21))
+		},
+		"2_months_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(0, 2, 0), after.AddDate(0, 2, 0))
+		},
+		"4_years_from_now": func(output, before, after time.Time) {
+			assertTimeInRange(t, output, before.AddDate(4, 0, 0), after.AddDate(4, 0, 0))
+		},
+	} {
+		var inputs withTime
+
+		before := time.Now()
+		e := withTimeDecoder.DecodeValues(&inputs, url.Values{"a": {expression}})
+		after := time.Now()
+		assertEqual(t, e, ErrorHash(nil))
+		assertEqual(t, inputs.A.Present, true)
+		assertion(inputs.A.Val, before, after)
+	}
+}
