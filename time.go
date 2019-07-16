@@ -175,7 +175,8 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 	}
 
 	for _, format := range opts.Format {
-		if format == "expression" {
+		switch format {
+		case "expression":
 			for _, parser := range timeExpressionParsers {
 				submatches := parser.Regexp.FindStringSubmatch(value)
 				if len(submatches) == 0 {
@@ -187,12 +188,12 @@ func (t *Time) FormValue(value string, options interface{}) Errorable {
 					return nil
 				}
 			}
-		}
-
-		if v, err := time.Parse(format, value); err == nil {
-			t.Val = v
-			t.Present = true
-			return nil
+		default:
+			if v, err := time.Parse(format, value); err == nil {
+				t.Val = v
+				t.Present = true
+				return nil
+			}
 		}
 	}
 
