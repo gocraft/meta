@@ -20,9 +20,7 @@ var withFloatDecoder = NewDecoder(&withFloat{})
 
 func TestFloatSuccess(t *testing.T) {
 	var inputs withFloat
-
 	e := withFloatDecoder.DecodeValues(&inputs, url.Values{"a": {"-1.1"}, "b": {"2.2"}})
-
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, -1.1)
 	assertEqual(t, inputs.B.Val, 2.2)
@@ -70,6 +68,12 @@ func TestFloatBlank(t *testing.T) {
 	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Null, false)
+
+	inputs = withFloat{}
+	e = withFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil, "b": nil})
+	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
 }
 
 func TestFloatInvalid(t *testing.T) {
@@ -81,6 +85,12 @@ func TestFloatInvalid(t *testing.T) {
 
 	inputs = withFloat{}
 	e = withFloatDecoder.DecodeJSON(&inputs, []byte(`{"a":"a","b":"b"}`))
+	assertEqual(t, e, ErrorHash{"a": ErrFloat, "b": ErrFloat})
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+
+	inputs = withFloat{}
+	e = withFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "a", "b": "b"})
 	assertEqual(t, e, ErrorHash{"a": ErrFloat, "b": ErrFloat})
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Null, false)
@@ -100,6 +110,10 @@ func TestFloatRange(t *testing.T) {
 	e = withFloatDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":%f,"b":%f}`, math.MaxFloat64, 1.0)))
 	assertEqual(t, e, ErrorHash(nil))
 
+	inputs = withFloat{}
+	e = withFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": math.MaxFloat64, "b": 1.0})
+	assertEqual(t, e, ErrorHash(nil))
+
 	const (
 		exMaxFloat64 = "2.797693134862315708145274237317043567981e+308"  // a little higher than 2**1023 * (2**53 - 1) / 2**52
 		exMinFloat64 = "-2.797693134862315708145274237317043567981e+308" // a little lower than -2**1023 * (2**53 - 1) / 2**52
@@ -113,6 +127,8 @@ func TestFloatRange(t *testing.T) {
 	inputs = withFloat{}
 	e = withFloatDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":%s,"b":%s}`, exMaxFloat64, exMinFloat64)))
 	assertEqual(t, e, ErrorHash{"a": ErrFloatRange, "b": ErrFloatRange})
+
+	// Note: DecodeMap not tested because the out-of-range values can't be passed as float64s
 }
 
 type withMinMaxFloat struct {
@@ -138,6 +154,14 @@ func TestFloatMinMax(t *testing.T) {
 
 	inputs = withMinMaxFloat{}
 	e = withMinMaxFloatDecoder.DecodeJSON(&inputs, []byte(`{"a":-5.00001,"b":16.0,"c":11.00000000}`))
+	assertEqual(t, e, ErrorHash{"a": ErrMin, "b": ErrMax})
+
+	inputs = withMinMaxFloat{}
+	e = withMinMaxFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -5.000, "b": 6.0001, "c": 11.0})
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withMinMaxFloat{}
+	e = withMinMaxFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -5.00001, "b": 16.0, "c": 11.00000000})
 	assertEqual(t, e, ErrorHash{"a": ErrMin, "b": ErrMax})
 }
 
@@ -165,6 +189,14 @@ func TestFloatIn(t *testing.T) {
 	inputs = withInFloat{}
 	e = withInFloatDecoder.DecodeJSON(&inputs, []byte(`{"a":-4.1111,"b":3.1,"c":-9.1}`))
 	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn, "c": ErrIn})
+
+	inputs = withInFloat{}
+	e = withInFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -4.10, "b": 3.0, "c": 9.1})
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withInFloat{}
+	e = withInFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -4.1111, "b": 3.1, "c": -9.1})
+	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn, "c": ErrIn})
 }
 
 type withOptionalFloat struct {
@@ -185,6 +217,12 @@ func TestOptionalFloatSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Val, 4.20)
+
+	inputs = withOptionalFloat{}
+	e = withOptionalFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 4.20})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Val, 4.20)
 }
 
 func TestOptionalFloatOmitted(t *testing.T) {
@@ -199,6 +237,12 @@ func TestOptionalFloatOmitted(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, float64(0))
+
+	inputs = withOptionalFloat{}
+	e = withOptionalFloatDecoder.DecodeMap(&inputs, map[string]interface{}{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, float64(0))
 }
 
 func TestOptionalFloatBlank(t *testing.T) {
@@ -210,6 +254,12 @@ func TestOptionalFloatBlank(t *testing.T) {
 
 	inputs = withOptionalFloat{}
 	e = withOptionalFloatDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, float64(0))
+
+	inputs = withOptionalFloat{}
+	e = withOptionalFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, float64(0))
@@ -228,6 +278,10 @@ func TestOptionalFloatBlankFailure(t *testing.T) {
 
 	inputs = withOptionalNonBlankFloat{}
 	e = withOptionalNonBlankFloatDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash{"a": ErrBlank})
+
+	inputs = withOptionalNonBlankFloat{}
+	e = withOptionalNonBlankFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 }
 
@@ -255,6 +309,13 @@ func TestOptionalNullFloatSuccess(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, false)
 	assertEqual(t, inputs.A.Val, 5.1)
+
+	inputs = withOptionalNullFloat{}
+	e = withOptionalNullFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 5.1})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, 5.1)
 }
 
 func TestOptionalNullFloatNull(t *testing.T) {
@@ -271,6 +332,13 @@ func TestOptionalNullFloatNull(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, true)
 	assertEqual(t, inputs.A.Val, float64(0))
+
+	inputs = withOptionalNullFloat{}
+	e = withOptionalNullFloatDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, float64(0))
 }
 
 func TestOptionalNullFloatOmitted(t *testing.T) {
@@ -283,6 +351,13 @@ func TestOptionalNullFloatOmitted(t *testing.T) {
 
 	inputs = withOptionalNullFloat{}
 	e = withOptionalNullFloatDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, float64(0))
+
+	inputs = withOptionalNullFloat{}
+	e = withOptionalNullFloatDecoder.DecodeMap(&inputs, map[string]interface{}{})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Null, false)
