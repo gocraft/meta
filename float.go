@@ -93,9 +93,7 @@ func (f *Float64) JSONValue(path string, i interface{}, options interface{}) Err
 
 	switch value := i.(type) {
 	case float64:
-		f.Val = value
-		f.Present = true
-		return nil
+		return f.validateValue(value, options)
 	case json.Number:
 		return f.FormValue(string(value), options)
 	case string:
@@ -124,26 +122,7 @@ func (i *Float64) FormValue(value string, options interface{}) Errorable {
 	}
 
 	if n, err := strconv.ParseFloat(value, 64); err == nil {
-		if opts.MinPresent && n < opts.Min {
-			return ErrMin
-		}
-		if opts.MaxPresent && n > opts.Max {
-			return ErrMax
-		}
-		if len(opts.In) > 0 {
-			found := false
-			for _, i := range opts.In {
-				if i == n {
-					found = true
-				}
-			}
-			if !found {
-				return ErrIn
-			}
-		}
-
-		i.Val = n
-		i.Present = true
+		return i.validateValue(n, options)
 	} else {
 		numError := err.(*strconv.NumError)
 		if numError.Err == strconv.ErrRange {
@@ -152,6 +131,32 @@ func (i *Float64) FormValue(value string, options interface{}) Errorable {
 			return ErrFloat
 		}
 	}
+	return nil
+}
+
+func (i *Float64) validateValue(value float64, options interface{}) Errorable {
+	opts := options.(*FloatOptions)
+
+	if opts.MinPresent && value < opts.Min {
+		return ErrMin
+	}
+	if opts.MaxPresent && value > opts.Max {
+		return ErrMax
+	}
+	if len(opts.In) > 0 {
+		found := false
+		for _, i := range opts.In {
+			if i == value {
+				found = true
+			}
+		}
+		if !found {
+			return ErrIn
+		}
+	}
+
+	i.Val = value
+	i.Present = true
 	return nil
 }
 

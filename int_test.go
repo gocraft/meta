@@ -46,6 +46,10 @@ func TestIntBlank(t *testing.T) {
 	inputs = withInt{}
 	e = withIntDecoder.DecodeJSON(&inputs, []byte(`{"a":null,"b":null}`))
 	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
+
+	inputs = withInt{}
+	e = withIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil, "b": nil})
+	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
 }
 
 func TestIntInvalid(t *testing.T) {
@@ -55,6 +59,10 @@ func TestIntInvalid(t *testing.T) {
 
 	inputs = withInt{}
 	e = withIntDecoder.DecodeJSON(&inputs, []byte(`{"a":"a","b":"b"}`))
+	assertEqual(t, e, ErrorHash{"a": ErrInt, "b": ErrInt})
+
+	inputs = withInt{}
+	e = withIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "a", "b": "b"})
 	assertEqual(t, e, ErrorHash{"a": ErrInt, "b": ErrInt})
 }
 
@@ -71,6 +79,10 @@ func TestIntRange(t *testing.T) {
 	e = withIntDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":%d,"b":%d}`, math.MaxInt64, math.MinInt64)))
 	assertEqual(t, e, ErrorHash(nil))
 
+	inputs = withInt{}
+	e = withIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": int64(math.MaxInt64), "b": int64(math.MaxInt64)})
+	assertEqual(t, e, ErrorHash(nil))
+
 	const (
 		exMaxInt64 = "9223372036854775808"
 		exMinInt64 = "-9223372036854775809"
@@ -85,6 +97,8 @@ func TestIntRange(t *testing.T) {
 	inputs = withInt{}
 	e = withIntDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":%s,"b":%s}`, exMaxInt64, exMinInt64)))
 	assertEqual(t, e, ErrorHash{"a": ErrIntRange, "b": ErrIntRange})
+
+	// Note: DecodeMap not tested because the out-of-range values can't be passed as int64s
 }
 
 type withMinMaxInt struct {
@@ -105,11 +119,19 @@ func TestIntMinMax(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 
 	inputs = withMinMaxInt{}
+	e = withMinMaxIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -5, "b": 6, "c": 11})
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withMinMaxInt{}
 	e = withMinMaxIntDecoder.DecodeValues(&inputs, url.Values{"a": {"-6"}, "b": {"16"}, "c": {"6"}})
 	assertEqual(t, e, ErrorHash{"a": ErrMin, "b": ErrMax})
 
 	inputs = withMinMaxInt{}
 	e = withMinMaxIntDecoder.DecodeJSON(&inputs, []byte(`{"a":-6,"b":16,"c":6}`))
+	assertEqual(t, e, ErrorHash{"a": ErrMin, "b": ErrMax})
+
+	inputs = withMinMaxInt{}
+	e = withMinMaxIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -6, "b": 16, "c": 6})
 	assertEqual(t, e, ErrorHash{"a": ErrMin, "b": ErrMax})
 }
 
@@ -131,11 +153,19 @@ func TestIntIn(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 
 	inputs = withInInt{}
+	e = withInIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -4, "b": 3, "c": 9})
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withInInt{}
 	e = withInIntDecoder.DecodeValues(&inputs, url.Values{"a": {"-6"}, "b": {"4"}, "c": {"11"}})
 	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn, "c": ErrIn})
 
 	inputs = withInInt{}
 	e = withInIntDecoder.DecodeJSON(&inputs, []byte(`{"a":-6,"b":4,"c":11}`))
+	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn, "c": ErrIn})
+
+	inputs = withInInt{}
+	e = withInIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": -6, "b": 4, "c": 11})
 	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn, "c": ErrIn})
 }
 
@@ -164,7 +194,7 @@ func TestUintSuccess(t *testing.T) {
 	assertEqual(t, inputs.B.Val, uint64(2))
 
 	inputs = withUint{}
-	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 1, "b": 0})
+	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(1), "b": uint64(0)})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Val, uint64(1))
 	assertEqual(t, inputs.B.Val, uint64(0))
@@ -178,6 +208,10 @@ func TestUintBlank(t *testing.T) {
 	inputs = withUint{}
 	e = withUintDecoder.DecodeJSON(&inputs, []byte(`{"a":null,"b":null}`))
 	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
+
+	inputs = withUint{}
+	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil, "b": nil})
+	assertEqual(t, e, ErrorHash{"a": ErrBlank, "b": ErrBlank})
 }
 
 func TestUintInvalid(t *testing.T) {
@@ -187,6 +221,10 @@ func TestUintInvalid(t *testing.T) {
 
 	inputs = withUint{}
 	e = withUintDecoder.DecodeJSON(&inputs, []byte(`{"a":"a","b":"b"}`))
+	assertEqual(t, e, ErrorHash{"a": ErrInt, "b": ErrInt})
+
+	inputs = withUint{}
+	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": "a", "b": "b", "c": "c"})
 	assertEqual(t, e, ErrorHash{"a": ErrInt, "b": ErrInt})
 }
 
@@ -201,6 +239,10 @@ func TestUintRange(t *testing.T) {
 
 	inputs = withUint{}
 	e = withUintDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":0,"b":%d}`, uint64(math.MaxUint64))))
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withUint{}
+	e = withUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(0), "b": uint64(math.MaxUint64)})
 	assertEqual(t, e, ErrorHash(nil))
 
 	const (
@@ -219,6 +261,8 @@ func TestUintRange(t *testing.T) {
 	inputs = withUint{}
 	e = withUintDecoder.DecodeJSON(&inputs, []byte(fmt.Sprintf(`{"a":%s,"b":%s}`, exMaxUint64, exMinUint64)))
 	assertEqual(t, e, ErrorHash{"a": ErrIntRange, "b": ErrInt})
+
+	// Note: DecodeMap not tested because the out-of-range values can't be passed as uint64s
 }
 
 type withMinMaxUint struct {
@@ -238,6 +282,10 @@ func TestUintMinMax(t *testing.T) {
 
 	inputs = withMinMaxUint{}
 	e = withMinMaxUintDecoder.DecodeJSON(&inputs, []byte(`{"a":5,"b":11,"c":6,"d":1,"e":16}`))
+	assertEqual(t, e, ErrorHash{"d": ErrMin, "e": ErrMax})
+
+	inputs = withMinMaxUint{}
+	e = withMinMaxUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(5), "b": uint64(11), "c": uint64(6), "d": uint64(1), "e": uint64(16)})
 	assertEqual(t, e, ErrorHash{"d": ErrMin, "e": ErrMax})
 }
 
@@ -259,11 +307,19 @@ func TestUintIn(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 
 	inputs = withInUint{}
+	e = withInUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(4), "b": uint64(3), "c": uint64(9)})
+	assertEqual(t, e, ErrorHash(nil))
+
+	inputs = withInUint{}
 	e = withInUintDecoder.DecodeValues(&inputs, url.Values{"a": {"6"}, "b": {"0"}, "c": {"9"}})
 	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn})
 
 	inputs = withInUint{}
 	e = withInUintDecoder.DecodeJSON(&inputs, []byte(`{"a":6,"b":0,"c":9}`))
+	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn})
+
+	inputs = withInUint{}
+	e = withInUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(6), "b": uint64(0), "c": uint64(9)})
 	assertEqual(t, e, ErrorHash{"a": ErrIn, "b": ErrIn})
 }
 
@@ -285,6 +341,12 @@ func TestOptionalIntSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Val, int64(5))
+
+	inputs = withOptionalInt{}
+	e = withOptionalIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 5})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Val, int64(5))
 }
 
 func TestOptionalIntOmitted(t *testing.T) {
@@ -299,6 +361,12 @@ func TestOptionalIntOmitted(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, int64(0))
+
+	inputs = withOptionalInt{}
+	e = withOptionalIntDecoder.DecodeMap(&inputs, map[string]interface{}{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, int64(0))
 }
 
 func TestOptionalIntBlank(t *testing.T) {
@@ -310,6 +378,12 @@ func TestOptionalIntBlank(t *testing.T) {
 
 	inputs = withOptionalInt{}
 	e = withOptionalIntDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, int64(0))
+
+	inputs = withOptionalInt{}
+	e = withOptionalIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, int64(0))
@@ -328,6 +402,10 @@ func TestOptionalIntBlankFailure(t *testing.T) {
 
 	inputs = withOptionalNonBlankInt{}
 	e = withOptionalNonBlankIntDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash{"a": ErrBlank})
+
+	inputs = withOptionalNonBlankInt{}
+	e = withOptionalNonBlankIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 }
 
@@ -349,6 +427,12 @@ func TestOptionalUintSuccess(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Val, uint64(1))
+
+	inputs = withOptionalUint{}
+	e = withOptionalUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(1)})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Val, uint64(1))
 }
 
 func TestOptionalUintOmitted(t *testing.T) {
@@ -363,6 +447,12 @@ func TestOptionalUintOmitted(t *testing.T) {
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalUint{}
+	e = withOptionalUintDecoder.DecodeMap(&inputs, map[string]interface{}{})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, uint64(0))
 }
 
 func TestOptionalUintBlank(t *testing.T) {
@@ -374,6 +464,12 @@ func TestOptionalUintBlank(t *testing.T) {
 
 	inputs = withOptionalUint{}
 	e = withOptionalUintDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalUint{}
+	e = withOptionalUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Val, uint64(0))
@@ -392,6 +488,10 @@ func TestOptionalUintBlankFailure(t *testing.T) {
 
 	inputs = withOptionalNonBlankUint{}
 	e = withOptionalNonBlankUintDecoder.DecodeJSON(&inputs, []byte(`{"a":null}`))
+	assertEqual(t, e, ErrorHash{"a": ErrBlank})
+
+	inputs = withOptionalNonBlankUint{}
+	e = withOptionalNonBlankUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
 	assertEqual(t, e, ErrorHash{"a": ErrBlank})
 }
 
@@ -419,6 +519,13 @@ func TestOptionalNullIntSuccess(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, false)
 	assertEqual(t, inputs.A.Val, int64(5))
+
+	inputs = withOptionalNullInt{}
+	e = withOptionalNullIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": 5})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, int64(5))
 }
 
 func TestOptionalNullIntNull(t *testing.T) {
@@ -435,6 +542,13 @@ func TestOptionalNullIntNull(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, true)
 	assertEqual(t, inputs.A.Val, int64(0))
+
+	inputs = withOptionalNullInt{}
+	e = withOptionalNullIntDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, int64(0))
 }
 
 func TestOptionalNullIntOmitted(t *testing.T) {
@@ -447,6 +561,13 @@ func TestOptionalNullIntOmitted(t *testing.T) {
 
 	inputs = withOptionalNullInt{}
 	e = withOptionalNullIntDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, int64(0))
+
+	inputs = withOptionalNullInt{}
+	e = withOptionalNullIntDecoder.DecodeMap(&inputs, map[string]interface{}{})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Null, false)
@@ -473,6 +594,13 @@ func TestOptionalNullUintSuccess(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, false)
 	assertEqual(t, inputs.A.Val, uint64(5))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": uint64(5)})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(5))
 }
 
 func TestOptionalNullUintNull(t *testing.T) {
@@ -489,6 +617,13 @@ func TestOptionalNullUintNull(t *testing.T) {
 	assertEqual(t, inputs.A.Present, true)
 	assertEqual(t, inputs.A.Null, true)
 	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeMap(&inputs, map[string]interface{}{"a": nil})
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, true)
+	assertEqual(t, inputs.A.Null, true)
+	assertEqual(t, inputs.A.Val, uint64(0))
 }
 
 func TestOptionalNullUintOmitted(t *testing.T) {
@@ -501,6 +636,13 @@ func TestOptionalNullUintOmitted(t *testing.T) {
 
 	inputs = withOptionalNullUint{}
 	e = withOptionalNullUintDecoder.DecodeJSON(&inputs, []byte(`{}`))
+	assertEqual(t, e, ErrorHash(nil))
+	assertEqual(t, inputs.A.Present, false)
+	assertEqual(t, inputs.A.Null, false)
+	assertEqual(t, inputs.A.Val, uint64(0))
+
+	inputs = withOptionalNullUint{}
+	e = withOptionalNullUintDecoder.DecodeMap(&inputs, map[string]interface{}{})
 	assertEqual(t, e, ErrorHash(nil))
 	assertEqual(t, inputs.A.Present, false)
 	assertEqual(t, inputs.A.Null, false)

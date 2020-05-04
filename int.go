@@ -166,13 +166,9 @@ func (n *Int64) JSONValue(path string, i interface{}, options interface{}) Error
 
 	switch value := i.(type) {
 	case int:
-		n.Val = int64(value)
-		n.Present = true
-		return nil
+		return n.validateValue(int64(value), options)
 	case int64:
-		n.Val = value
-		n.Present = true
-		return nil
+		return n.validateValue(value, options)
 	case json.Number:
 		return n.FormValue(string(value), options)
 	case string:
@@ -202,26 +198,7 @@ func (i *Int64) FormValue(value string, options interface{}) Errorable {
 	}
 
 	if n, err := strconv.ParseInt(value, 10, 64); err == nil {
-		if opts.MinPresent && n < opts.Min {
-			return ErrMin
-		}
-		if opts.MaxPresent && n > opts.Max {
-			return ErrMax
-		}
-		if len(opts.In) > 0 {
-			found := false
-			for _, i := range opts.In {
-				if i == n {
-					found = true
-				}
-			}
-			if !found {
-				return ErrIn
-			}
-		}
-
-		i.Val = n
-		i.Present = true
+		return i.validateValue(n, options)
 	} else {
 		numError := err.(*strconv.NumError)
 		if numError.Err == strconv.ErrRange {
@@ -233,6 +210,32 @@ func (i *Int64) FormValue(value string, options interface{}) Errorable {
 	return nil
 }
 
+func (i *Int64) validateValue(value int64, options interface{}) Errorable {
+	opts := options.(*IntOptions)
+
+	if opts.MinPresent && value < opts.Min {
+		return ErrMin
+	}
+	if opts.MaxPresent && value > opts.Max {
+		return ErrMax
+	}
+	if len(opts.In) > 0 {
+		found := false
+		for _, i := range opts.In {
+			if i == value {
+				found = true
+			}
+		}
+		if !found {
+			return ErrIn
+		}
+	}
+
+	i.Val = value
+	i.Present = true
+	return nil
+}
+
 func (n *Uint64) JSONValue(path string, i interface{}, options interface{}) Errorable {
 	n.Path = path
 	if i == nil {
@@ -241,17 +244,11 @@ func (n *Uint64) JSONValue(path string, i interface{}, options interface{}) Erro
 
 	switch value := i.(type) {
 	case int:
-		n.Val = uint64(value)
-		n.Present = true
-		return nil
+		return n.validateValue(uint64(value), options)
 	case int64:
-		n.Val = uint64(value)
-		n.Present = true
-		return nil
+		return n.validateValue(uint64(value), options)
 	case uint64:
-		n.Val = value
-		n.Present = true
-		return nil
+		return n.validateValue(value, options)
 	case json.Number:
 		return n.FormValue(string(value), options)
 	case string:
@@ -281,25 +278,7 @@ func (i *Uint64) FormValue(value string, options interface{}) Errorable {
 	}
 
 	if n, err := strconv.ParseUint(value, 10, 64); err == nil {
-		if opts.MinPresent && n < opts.Min {
-			return ErrMin
-		}
-		if opts.MaxPresent && n > opts.Max {
-			return ErrMax
-		}
-		if len(opts.In) > 0 {
-			found := false
-			for _, i := range opts.In {
-				if i == n {
-					found = true
-				}
-			}
-			if !found {
-				return ErrIn
-			}
-		}
-		i.Val = n
-		i.Present = true
+		return i.validateValue(n, options)
 	} else {
 		numError := err.(*strconv.NumError)
 
@@ -309,6 +288,32 @@ func (i *Uint64) FormValue(value string, options interface{}) Errorable {
 			return ErrInt
 		}
 	}
+	return nil
+}
+
+func (i *Uint64) validateValue(value uint64, options interface{}) Errorable {
+	opts := options.(*UintOptions)
+
+	if opts.MinPresent && value < opts.Min {
+		return ErrMin
+	}
+	if opts.MaxPresent && value > opts.Max {
+		return ErrMax
+	}
+	if len(opts.In) > 0 {
+		found := false
+		for _, i := range opts.In {
+			if i == value {
+				found = true
+			}
+		}
+		if !found {
+			return ErrIn
+		}
+	}
+
+	i.Val = value
+	i.Present = true
 	return nil
 }
 
