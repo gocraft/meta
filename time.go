@@ -213,3 +213,13 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	}
 	return nullString, nil
 }
+
+func (t *Time) UnmarshalJSON(b []byte) error {
+	err := MetaJson.Unmarshal(b, &t.Val)
+	if err != nil {
+		return err
+	}
+	t.Presence = Presence{true}
+	t.Nullity = Nullity{false}
+	return nil
+}

@@ -121,3 +121,13 @@ func (b Bool) MarshalJSON() ([]byte, error) {
 	}
 	return nullString, nil
 }
+
+func (b *Bool) UnmarshalJSON(bs []byte) error {
+	err := MetaJson.Unmarshal(bs, &b.Val)
+	if err != nil {
+		return err
+	}
+	b.Presence = Presence{true}
+	b.Nullity = Nullity{false}
+	return nil
+}

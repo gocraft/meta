@@ -339,9 +339,29 @@ func (i Int64) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
+func (i *Int64) UnmarshalJSON(b []byte) error {
+	err := MetaJson.Unmarshal(b, &i.Val)
+	if err != nil {
+		return err
+	}
+	i.Presence = Presence{true}
+	i.Nullity = Nullity{false}
+	return nil
+}
+
 func (i Uint64) MarshalJSON() ([]byte, error) {
 	if i.Present && !i.Null {
 		return MetaJson.Marshal(i.Val)
 	}
 	return nullString, nil
+}
+
+func (i *Uint64) UnmarshalJSON(b []byte) error {
+	err := MetaJson.Unmarshal(b, &i.Val)
+	if err != nil {
+		return err
+	}
+	i.Presence = Presence{true}
+	i.Nullity = Nullity{false}
+	return nil
 }

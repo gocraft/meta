@@ -173,3 +173,13 @@ func (i Float64) MarshalJSON() ([]byte, error) {
 	}
 	return nullString, nil
 }
+
+func (i *Float64) UnmarshalJSON(bs []byte) error {
+	err := MetaJson.Unmarshal(bs, &i.Val)
+	if err != nil {
+		return err
+	}
+	i.Presence = Presence{true}
+	i.Nullity = Nullity{false}
+	return nil
+}
