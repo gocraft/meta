@@ -13,7 +13,7 @@ type jsonObj struct {
 	B   Bool
 }
 
-func TestJsonUnmarshal(t *testing.T) {
+func TestJSONUnmarshal(t *testing.T) {
 
 	obj := jsonObj{
 		Str: NewString("hello world"),
@@ -39,4 +39,16 @@ func TestJsonUnmarshal(t *testing.T) {
 	assertEqual(t, decode.UI.Val, uint64(12))
 	assertEqual(t, decode.F.Val, float64(13))
 	assertEqual(t, decode.B.Val, true)
+}
+
+func TestJSONNulls(t *testing.T) {
+	str := []byte(`{"str": null}`)
+	var obj jsonObj
+	err := json.Unmarshal(str, &obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertEqual(t, obj.Str.Null, true)
+	assertEqual(t, obj.Str.Val, "")
 }

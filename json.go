@@ -1,8 +1,8 @@
 package meta
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 )
 
 var MetaJson JsonLoader
@@ -19,7 +19,7 @@ type JsonLoader interface {
 }
 
 // Default implementation of Json loader just uses Go's standard json lib
-type defaultJsonLoader struct {}
+type defaultJsonLoader struct{}
 
 func (j *defaultJsonLoader) Marshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)

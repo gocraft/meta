@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"reflect"
 	"regexp"
@@ -215,6 +216,10 @@ func (t Time) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Time) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(nullString, b) {
+		t.Nullity = Nullity{true}
+		return nil
+	}
 	err := MetaJson.Unmarshal(b, &t.Val)
 	if err != nil {
 		return err
