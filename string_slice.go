@@ -131,3 +131,10 @@ func (i *StringSlice) FormValue(value string, options interface{}) Errorable {
 
 	return nil
 }
+
+func (s StringSlice) MarshalJSON() ([]byte, error) {
+	if len(s.Val) > 0 {
+		return MetaJson.Marshal(s.Val)
+	}
+	return nullString, nil
+}
